@@ -1,0 +1,43 @@
+name: Transform Roadmap to Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run - only print what would be created'
+        required: false
+        default: 'false'
+        type: boolean
+      phase_filter:
+        description: 'Only process specific phase (e.g., "Phase 1", "Phase 2", or leave empty for all)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests markdown
+
+      - name: Parse roadmap and create issues
+        run: python .github/scripts/roadmap-parser.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PHASE_FILTER: ${{ inputs.phase_filter }}
