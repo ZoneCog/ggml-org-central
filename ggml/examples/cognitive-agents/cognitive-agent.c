@@ -1,4 +1,7 @@
 #include "cognitive-agent.h"
+#include "../../src/reasoning/pln-core.h"
+#include "../../src/reasoning/moses-core.h"
+#include "../../src/reasoning/pattern-matcher.h"
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
@@ -216,12 +219,37 @@ reasoning_engine* init_reasoning_engine(struct ggml_context* ctx) {
     reasoning->inference_rules = NULL;
     reasoning->reasoning_accuracy = 0.75f;
     reasoning->inferences_made = 0;
+    
+    // Initialize PLN integration
+    reasoning->pln_engine = NULL;
+    reasoning->pln_inference_rate = 0.0f;
+    reasoning->average_pln_confidence = 0.0f;
+    
+    // Initialize MOSES integration
+    reasoning->moses_engine = NULL;
+    reasoning->best_program_fitness = -INFINITY;
+    reasoning->evolution_generations = 0;
+    
+    // Initialize Pattern Matcher integration
+    reasoning->pattern_matcher = NULL;
+    reasoning->pattern_match_accuracy = 0.0f;
+    reasoning->patterns_recognized = 0;
+    
     return reasoning;
 }
 
 // Cleanup reasoning engine
 void cleanup_reasoning_engine(reasoning_engine* reasoning) {
     if (reasoning) {
+        if (reasoning->pln_engine) {
+            pln_engine_destroy(reasoning->pln_engine);
+        }
+        if (reasoning->moses_engine) {
+            moses_engine_destroy(reasoning->moses_engine);
+        }
+        if (reasoning->pattern_matcher) {
+            pattern_matcher_destroy(reasoning->pattern_matcher);
+        }
         free(reasoning);
     }
 }
@@ -392,4 +420,512 @@ void process_incoming_tensor(cognitive_agent* receiver,
             printf("  Processing unknown cognitive type\n");
             break;
     }
+}
+
+// PLN Integration Functions
+
+// Initialize PLN reasoning
+int init_pln_reasoning(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->pln_engine = pln_engine_create(reasoning->ctx);
+    if (!reasoning->pln_engine) {
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Perform PLN deduction
+int pln_perform_deduction(reasoning_engine* reasoning, const char* premise1, const char* premise2) {
+    if (!reasoning || !reasoning->pln_engine || !premise1 || !premise2) {
+        return -1;
+    }
+    
+    // Find or create nodes for premises
+    struct pln_node* node1 = pln_node_find_by_name(reasoning->pln_engine, premise1);
+    struct pln_node* node2 = pln_node_find_by_name(reasoning->pln_engine, premise2);
+    
+    if (!node1) {
+        node1 = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, premise1);
+        node1->truth_value = pln_truth_value_create(0.8f, 0.7f, 5.0f);
+    }
+    
+    if (!node2) {
+        node2 = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, premise2);
+        node2->truth_value = pln_truth_value_create(0.75f, 0.8f, 4.0f);
+    }
+    
+    // Perform deduction
+    struct pln_inference_result* result = pln_deduction(reasoning->pln_engine, node1, node2);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Deduction: %s ∧ %s ⇒ conclusion (strength: %.3f, confidence: %.3f)\n",
+               premise1, premise2, 
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN induction
+int pln_perform_induction(reasoning_engine* reasoning, const char* evidence_ab, const char* evidence_a) {
+    if (!reasoning || !reasoning->pln_engine || !evidence_ab || !evidence_a) {
+        return -1;
+    }
+    
+    struct pln_node* node_ab = pln_node_find_by_name(reasoning->pln_engine, evidence_ab);
+    struct pln_node* node_a = pln_node_find_by_name(reasoning->pln_engine, evidence_a);
+    
+    if (!node_ab) {
+        node_ab = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_ab);
+        node_ab->truth_value = pln_truth_value_create(0.7f, 0.6f, 3.0f);
+    }
+    
+    if (!node_a) {
+        node_a = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_a);
+        node_a->truth_value = pln_truth_value_create(0.85f, 0.9f, 10.0f);
+    }
+    
+    struct pln_inference_result* result = pln_induction(reasoning->pln_engine, node_ab, node_a);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Induction: Generalized from %s and %s (strength: %.3f, confidence: %.3f)\n",
+               evidence_ab, evidence_a,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN abduction
+int pln_perform_abduction(reasoning_engine* reasoning, const char* rule_ab, const char* evidence_b) {
+    if (!reasoning || !reasoning->pln_engine || !rule_ab || !evidence_b) {
+        return -1;
+    }
+    
+    struct pln_node* rule = pln_node_find_by_name(reasoning->pln_engine, rule_ab);
+    struct pln_node* evidence = pln_node_find_by_name(reasoning->pln_engine, evidence_b);
+    
+    if (!rule) {
+        rule = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, rule_ab);
+        rule->truth_value = pln_truth_value_create(0.8f, 0.7f, 6.0f);
+    }
+    
+    if (!evidence) {
+        evidence = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_b);
+        evidence->truth_value = pln_truth_value_create(0.9f, 0.85f, 8.0f);
+    }
+    
+    struct pln_inference_result* result = pln_abduction(reasoning->pln_engine, rule, evidence);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Abduction: Hypothesis from %s and %s (strength: %.3f, confidence: %.3f)\n",
+               rule_ab, evidence_b,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN revision
+int pln_perform_revision(reasoning_engine* reasoning, const char* belief1, const char* belief2) {
+    if (!reasoning || !reasoning->pln_engine || !belief1 || !belief2) {
+        return -1;
+    }
+    
+    struct pln_node* node1 = pln_node_find_by_name(reasoning->pln_engine, belief1);
+    struct pln_node* node2 = pln_node_find_by_name(reasoning->pln_engine, belief2);
+    
+    if (!node1) {
+        node1 = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, belief1);
+        node1->truth_value = pln_truth_value_create(0.7f, 0.6f, 4.0f);
+    }
+    
+    if (!node2) {
+        node2 = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, belief2);
+        node2->truth_value = pln_truth_value_create(0.8f, 0.7f, 6.0f);
+    }
+    
+    struct pln_inference_result* result = pln_revision(reasoning->pln_engine, node1, node2);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Revision: Combined %s and %s (strength: %.3f, confidence: %.3f)\n",
+               belief1, belief2,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Get PLN inference rate
+float pln_get_inference_rate(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pln_engine) {
+        return 0.0f;
+    }
+    
+    return pln_engine_get_inference_rate(reasoning->pln_engine);
+}
+
+// Add belief to PLN
+void pln_add_belief(reasoning_engine* reasoning, const char* concept, float strength, float confidence) {
+    if (!reasoning || !reasoning->pln_engine || !concept) {
+        return;
+    }
+    
+    struct pln_node* node = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, concept);
+    node->truth_value = pln_truth_value_create(strength, confidence, 1.0f);
+}
+
+// Print PLN statistics
+void pln_print_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pln_engine) {
+        printf("PLN engine not initialized\n");
+        return;
+    }
+    
+    printf("PLN Statistics:\n");
+    printf("  Total inferences: %lu\n", reasoning->pln_engine->inferences_made);
+    printf("  Inference rate: %.2f inferences/second\n", reasoning->pln_inference_rate);
+    printf("  Average confidence: %.3f\n", reasoning->average_pln_confidence);
+    printf("  Node count: %zu\n", reasoning->pln_engine->node_count);
+}
+
+// MOSES Integration Functions
+
+// Initialize MOSES evolution
+int init_moses_evolution(reasoning_engine* reasoning, size_t population_size) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->moses_engine = moses_engine_create(reasoning->ctx, population_size);
+    if (!reasoning->moses_engine) {
+        return -1;
+    }
+    
+    // Set cognitive fitness function
+    moses_set_fitness_function(reasoning->moses_engine, moses_cognitive_fitness_function, reasoning);
+    
+    // Initialize population
+    if (moses_initialize_population(reasoning->moses_engine) != 0) {
+        moses_engine_destroy(reasoning->moses_engine);
+        reasoning->moses_engine = NULL;
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Evolve reasoning strategies
+int moses_evolve_reasoning_strategies(reasoning_engine* reasoning, uint32_t generations) {
+    if (!reasoning || !reasoning->moses_engine) {
+        return -1;
+    }
+    
+    printf("Evolving reasoning strategies for %u generations...\n", generations);
+    
+    for (uint32_t gen = 0; gen < generations; gen++) {
+        if (moses_evolve_generation(reasoning->moses_engine) != 0) {
+            printf("Evolution failed at generation %u\n", gen);
+            return -1;
+        }
+        
+        // Update metrics
+        reasoning->best_program_fitness = reasoning->moses_engine->population->best_fitness;
+        reasoning->evolution_generations = reasoning->moses_engine->generations_evolved;
+        
+        // Print progress every 10 generations
+        if ((gen + 1) % 10 == 0) {
+            printf("  Generation %u: Best fitness = %.4f, Avg fitness = %.4f, Diversity = %.4f\n",
+                   gen + 1,
+                   reasoning->moses_engine->population->best_fitness,
+                   reasoning->moses_engine->population->average_fitness,
+                   reasoning->moses_engine->population->diversity_measure);
+        }
+    }
+    
+    printf("Evolution completed!\n");
+    return 0;
+}
+
+// Optimize cognitive program for specific problem type
+int moses_optimize_cognitive_program(reasoning_engine* reasoning, const char* problem_type) {
+    if (!reasoning || !reasoning->moses_engine || !problem_type) {
+        return -1;
+    }
+    
+    printf("Optimizing cognitive program for problem type: %s\n", problem_type);
+    
+    // Select appropriate fitness function based on problem type
+    if (strcmp(problem_type, "reasoning") == 0) {
+        moses_set_fitness_function(reasoning->moses_engine, moses_cognitive_fitness_function, reasoning);
+    } else if (strcmp(problem_type, "complexity") == 0) {
+        moses_set_fitness_function(reasoning->moses_engine, moses_complexity_fitness_function, reasoning);
+    } else {
+        moses_set_fitness_function(reasoning->moses_engine, moses_default_fitness_function, reasoning);
+    }
+    
+    // Run evolution for the specific problem
+    return moses_evolve_reasoning_strategies(reasoning, 20);
+}
+
+// Get best fitness from current population
+float moses_get_best_fitness(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine || !reasoning->moses_engine->population) {
+        return -INFINITY;
+    }
+    
+    return reasoning->moses_engine->population->best_fitness;
+}
+
+// Print MOSES evolution statistics
+void moses_print_evolution_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine) {
+        printf("MOSES engine not initialized\n");
+        return;
+    }
+    
+    moses_print_population_stats(reasoning->moses_engine);
+    
+    printf("  Best program fitness: %.4f\n", reasoning->best_program_fitness);
+    printf("  Evolution generations: %u\n", reasoning->evolution_generations);
+}
+
+// Self-modify agent using MOSES
+int moses_self_modify_agent(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine) {
+        return -1;
+    }
+    
+    printf("Agent self-modification using MOSES...\n");
+    
+    // Run evolution to find better cognitive strategies
+    int result = moses_evolve_reasoning_strategies(reasoning, 30);
+    
+    if (result == 0) {
+        printf("Self-modification completed. New best fitness: %.4f\n", 
+               moses_get_best_fitness(reasoning));
+        
+        // In a real implementation, we would apply the best program to modify
+        // the agent's behavior, attention allocation, or reasoning strategies
+        printf("Applied evolved cognitive strategies to agent behavior.\n");
+    }
+    
+    return result;
+}
+
+// Pattern Matching Integration Functions
+
+// Initialize pattern matching
+int init_pattern_matching(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->pattern_matcher = pattern_matcher_create(reasoning->ctx);
+    if (!reasoning->pattern_matcher) {
+        return -1;
+    }
+    
+    // Configure pattern matcher for cognitive tasks
+    pattern_matcher_set_threshold(reasoning->pattern_matcher, 0.75f);
+    pattern_matcher_set_metric(reasoning->pattern_matcher, SIMILARITY_COSINE);
+    pattern_matcher_enable_fuzzy_matching(reasoning->pattern_matcher, true);
+    pattern_matcher_enable_analogy_detection(reasoning->pattern_matcher, true);
+    
+    return 0;
+}
+
+// Add knowledge pattern
+int pattern_add_knowledge_pattern(reasoning_engine* reasoning, const char* concept, struct ggml_tensor* data) {
+    if (!reasoning || !reasoning->pattern_matcher || !concept) {
+        return -1;
+    }
+    
+    struct pattern* pattern = pattern_create(PATTERN_TYPE_TENSOR, data, concept);
+    if (!pattern) {
+        return -1;
+    }
+    
+    pattern->confidence = 0.8f; // Default confidence for knowledge patterns
+    
+    int result = pattern_matcher_add_pattern(reasoning->pattern_matcher, pattern);
+    if (result == 0) {
+        printf("Added knowledge pattern: %s\n", concept);
+    }
+    
+    return result;
+}
+
+// Recognize sequence patterns
+int pattern_recognize_sequence(reasoning_engine* reasoning, struct ggml_tensor* sequence_data) {
+    if (!reasoning || !reasoning->pattern_matcher || !sequence_data) {
+        return -1;
+    }
+    
+    struct pattern* query_pattern = pattern_create(PATTERN_TYPE_SEQUENCE, sequence_data, "query_sequence");
+    if (!query_pattern) {
+        return -1;
+    }
+    
+    struct pattern_match* best_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, query_pattern);
+    
+    if (best_match) {
+        reasoning->patterns_recognized++;
+        reasoning->pattern_match_accuracy = pattern_matcher_get_accuracy(reasoning->pattern_matcher);
+        
+        printf("Pattern recognition: Found match with %.3f similarity", best_match->similarity_score);
+        if (best_match->target_pattern && best_match->target_pattern->name) {
+            printf(" to pattern '%s'", best_match->target_pattern->name);
+        }
+        printf("\n");
+        
+        pattern_match_destroy(best_match);
+        pattern_destroy(query_pattern);
+        return 0;
+    }
+    
+    pattern_destroy(query_pattern);
+    printf("Pattern recognition: No significant match found\n");
+    return -1;
+}
+
+// Find analogies between concepts
+int pattern_find_analogies(reasoning_engine* reasoning, const char* source_concept, const char* target_concept) {
+    if (!reasoning || !reasoning->pattern_matcher || !source_concept || !target_concept) {
+        return -1;
+    }
+    
+    struct pattern* source_pattern = pattern_matcher_find_pattern(reasoning->pattern_matcher, source_concept);
+    struct pattern* target_pattern = pattern_matcher_find_pattern(reasoning->pattern_matcher, target_concept);
+    
+    if (!source_pattern || !target_pattern) {
+        printf("Analogy detection: Could not find patterns for '%s' or '%s'\n", 
+               source_concept, target_concept);
+        return -1;
+    }
+    
+    float analogy_strength = pattern_compute_similarity(source_pattern, target_pattern, SIMILARITY_COSINE);
+    
+    printf("Analogy analysis: %s ≈ %s (strength: %.3f)\n", 
+           source_concept, target_concept, analogy_strength);
+    
+    if (analogy_strength > 0.6f) {
+        printf("  Strong analogy detected!\n");
+        return 1;
+    } else if (analogy_strength > 0.3f) {
+        printf("  Weak analogy detected.\n");
+        return 0;
+    } else {
+        printf("  No significant analogy found.\n");
+        return -1;
+    }
+}
+
+// Get pattern match accuracy
+float pattern_get_match_accuracy(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pattern_matcher) {
+        return 0.0f;
+    }
+    
+    return pattern_matcher_get_accuracy(reasoning->pattern_matcher);
+}
+
+// Print pattern recognition statistics
+void pattern_print_recognition_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pattern_matcher) {
+        printf("Pattern matcher not initialized\n");
+        return;
+    }
+    
+    pattern_matcher_print_stats(reasoning->pattern_matcher);
+    
+    printf("  Patterns recognized: %lu\n", reasoning->patterns_recognized);
+    printf("  Recognition accuracy: %.3f\n", reasoning->pattern_match_accuracy);
+}
+
+// Cross-modal pattern analysis
+int pattern_cross_modal_analysis(reasoning_engine* reasoning, struct ggml_tensor* text, struct ggml_tensor* embedding) {
+    if (!reasoning || !reasoning->pattern_matcher || !text || !embedding) {
+        return -1;
+    }
+    
+    // Create patterns for different modalities
+    struct pattern* text_pattern = pattern_create(PATTERN_TYPE_TENSOR, text, "text_input");
+    struct pattern* embedding_pattern = pattern_create(PATTERN_TYPE_TENSOR, embedding, "embedding_input");
+    
+    if (!text_pattern || !embedding_pattern) {
+        if (text_pattern) pattern_destroy(text_pattern);
+        if (embedding_pattern) pattern_destroy(embedding_pattern);
+        return -1;
+    }
+    
+    printf("Cross-modal analysis:\n");
+    
+    // Find best matches for each modality
+    struct pattern_match* text_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, text_pattern);
+    struct pattern_match* embedding_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, embedding_pattern);
+    
+    if (text_match) {
+        printf("  Text pattern match: %.3f similarity", text_match->similarity_score);
+        if (text_match->target_pattern && text_match->target_pattern->name) {
+            printf(" to '%s'", text_match->target_pattern->name);
+        }
+        printf("\n");
+        pattern_match_destroy(text_match);
+    }
+    
+    if (embedding_match) {
+        printf("  Embedding pattern match: %.3f similarity", embedding_match->similarity_score);
+        if (embedding_match->target_pattern && embedding_match->target_pattern->name) {
+            printf(" to '%s'", embedding_match->target_pattern->name);
+        }
+        printf("\n");
+        pattern_match_destroy(embedding_match);
+    }
+    
+    // Compute cross-modal similarity
+    float cross_modal_similarity = pattern_compute_similarity(text_pattern, embedding_pattern, SIMILARITY_COSINE);
+    printf("  Cross-modal coherence: %.3f\n", cross_modal_similarity);
+    
+    pattern_destroy(text_pattern);
+    pattern_destroy(embedding_pattern);
+    
+    reasoning->patterns_recognized += 2;
+    return 0;
 }

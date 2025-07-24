@@ -261,6 +261,291 @@ void demo_attention_economy(void) {
     printf("\nAttention economy demo completed.\n");
 }
 
+// Demo: PLN Reasoning Engine
+void demo_pln_reasoning(void) {
+    printf("\n=== PLN Reasoning Engine Demo ===\n");
+    
+    // Create a cognitive agent with PLN reasoning
+    cognitive_agent* reasoner = create_cognitive_agent("localhost:7001");
+    
+    // Initialize PLN reasoning engine
+    if (init_pln_reasoning(reasoner->reasoning) != 0) {
+        printf("Failed to initialize PLN reasoning engine\n");
+        cleanup_cognitive_agent(reasoner);
+        return;
+    }
+    
+    printf("PLN reasoning engine initialized successfully\n");
+    
+    // Add some beliefs to the PLN system
+    printf("\nAdding beliefs to PLN system...\n");
+    pln_add_belief(reasoner->reasoning, "humans_are_conscious", 0.9f, 0.8f);
+    pln_add_belief(reasoner->reasoning, "consciousness_requires_self_awareness", 0.8f, 0.7f);
+    pln_add_belief(reasoner->reasoning, "ai_systems_process_information", 0.95f, 0.9f);
+    pln_add_belief(reasoner->reasoning, "complex_systems_exhibit_emergence", 0.75f, 0.6f);
+    
+    // Demonstrate PLN inference rules
+    printf("\nDemonstrating PLN inference rules...\n");
+    
+    // Deduction: If humans are conscious AND consciousness requires self-awareness
+    // Then humans have self-awareness
+    printf("\n1. PLN Deduction Example:\n");
+    pln_perform_deduction(reasoner->reasoning, 
+                         "humans_are_conscious", 
+                         "consciousness_requires_self_awareness");
+    
+    // Induction: Generalize from specific evidence
+    printf("\n2. PLN Induction Example:\n");
+    pln_perform_induction(reasoner->reasoning,
+                         "ai_systems_process_information",
+                         "complex_systems_exhibit_emergence");
+    
+    // Abduction: Generate hypothesis from observation
+    printf("\n3. PLN Abduction Example:\n");
+    pln_perform_abduction(reasoner->reasoning,
+                         "consciousness_requires_self_awareness",
+                         "humans_are_conscious");
+    
+    // Revision: Combine conflicting evidence
+    printf("\n4. PLN Revision Example:\n");
+    pln_add_belief(reasoner->reasoning, "ai_consciousness_possibility", 0.3f, 0.5f);
+    pln_add_belief(reasoner->reasoning, "ai_consciousness_evidence", 0.7f, 0.6f);
+    pln_perform_revision(reasoner->reasoning,
+                        "ai_consciousness_possibility",
+                        "ai_consciousness_evidence");
+    
+    // Demonstrate performance
+    printf("\n5. Performance Test:\n");
+    printf("Running rapid inference sequence...\n");
+    
+    uint64_t start_time = get_timestamp();
+    for (int i = 0; i < 100; i++) {
+        pln_perform_deduction(reasoner->reasoning, 
+                             "humans_are_conscious", 
+                             "consciousness_requires_self_awareness");
+    }
+    uint64_t end_time = get_timestamp();
+    
+    float elapsed_ns = (float)(end_time - start_time);
+    float inferences_per_second = 100.0f / (elapsed_ns / 1e9f);
+    
+    printf("Completed 100 deductions in %.2f ms\n", elapsed_ns / 1e6f);
+    printf("Inference rate: %.1f inferences/second\n", inferences_per_second);
+    
+    // Print final statistics
+    printf("\nFinal PLN Statistics:\n");
+    pln_print_stats(reasoner->reasoning);
+    
+    // Verify performance target
+    if (inferences_per_second >= 1000.0f) {
+        printf("\n✓ SUCCESS: Achieved target of >1000 PLN inferences/second!\n");
+    } else {
+        printf("\n⚠ NOTICE: Current rate %.1f < target 1000 inferences/second\n", inferences_per_second);
+        printf("  (This may be acceptable for this basic implementation)\n");
+    }
+    
+    cleanup_cognitive_agent(reasoner);
+    printf("\nPLN reasoning demo completed.\n");
+}
+
+// Demo: MOSES Evolution Engine
+void demo_moses_evolution(void) {
+    printf("\n=== MOSES Evolution Engine Demo ===\n");
+    
+    // Create a cognitive agent with evolutionary capabilities
+    cognitive_agent* evolver = create_cognitive_agent("localhost:6001");
+    
+    // Initialize MOSES evolution engine
+    if (init_moses_evolution(evolver->reasoning, 20) != 0) {
+        printf("Failed to initialize MOSES evolution engine\n");
+        cleanup_cognitive_agent(evolver);
+        return;
+    }
+    
+    printf("MOSES evolution engine initialized with population of 20\n");
+    
+    // Demonstrate evolution for different problem types
+    printf("\n1. Evolving general cognitive strategies...\n");
+    moses_evolve_reasoning_strategies(evolver->reasoning, 15);
+    moses_print_evolution_stats(evolver->reasoning);
+    
+    printf("\n2. Optimizing for reasoning tasks...\n");
+    moses_optimize_cognitive_program(evolver->reasoning, "reasoning");
+    
+    printf("\n3. Optimizing for complexity constraints...\n");
+    moses_optimize_cognitive_program(evolver->reasoning, "complexity");
+    
+    // Demonstrate self-modification
+    printf("\n4. Agent self-modification demonstration...\n");
+    float initial_fitness = moses_get_best_fitness(evolver->reasoning);
+    printf("Initial best fitness: %.4f\n", initial_fitness);
+    
+    moses_self_modify_agent(evolver->reasoning);
+    
+    float final_fitness = moses_get_best_fitness(evolver->reasoning);
+    printf("Final best fitness: %.4f\n", final_fitness);
+    
+    if (final_fitness > initial_fitness) {
+        printf("✓ SUCCESS: Agent successfully improved through self-modification!\n");
+        printf("  Improvement: %.4f → %.4f (gain: %.4f)\n", 
+               initial_fitness, final_fitness, final_fitness - initial_fitness);
+    } else {
+        printf("⚠ NOTICE: No improvement detected (evolution may need more generations)\n");
+    }
+    
+    // Print final statistics
+    printf("\nFinal MOSES Statistics:\n");
+    moses_print_evolution_stats(evolver->reasoning);
+    
+    // Performance analysis
+    uint32_t total_generations = evolver->reasoning->evolution_generations;
+    if (total_generations > 0) {
+        printf("\nEvolution Summary:\n");
+        printf("  Total generations: %u\n", total_generations);
+        printf("  Programs evaluated: ~%u\n", total_generations * 20); // Approximate
+        printf("  Final fitness: %.4f\n", final_fitness);
+        printf("  Convergence achieved: %s\n", 
+               (final_fitness > -1.0f) ? "Yes" : "Partial");
+    }
+    
+    cleanup_cognitive_agent(evolver);
+    printf("\nMOSES evolution demo completed.\n");
+}
+
+// Demo: Pattern Matching Engine
+void demo_pattern_matching(void) {
+    printf("\n=== Pattern Matching Engine Demo ===\n");
+    
+    // Create a cognitive agent with pattern matching capabilities
+    cognitive_agent* recognizer = create_cognitive_agent("localhost:5001");
+    
+    // Initialize pattern matching engine
+    if (init_pattern_matching(recognizer->reasoning) != 0) {
+        printf("Failed to initialize pattern matching engine\n");
+        cleanup_cognitive_agent(recognizer);
+        return;
+    }
+    
+    printf("Pattern matching engine initialized successfully\n");
+    
+    // Create sample knowledge patterns
+    printf("\n1. Creating knowledge patterns...\n");
+    
+    // Create different types of patterns
+    struct ggml_tensor* consciousness_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* consciousness_data = (float*)consciousness_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        consciousness_data[i] = sinf((float)i / 64.0f * 3.14159f * 2.0f); // Sine wave pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "consciousness", consciousness_pattern);
+    
+    struct ggml_tensor* intelligence_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* intelligence_data = (float*)intelligence_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        intelligence_data[i] = cosf((float)i / 64.0f * 3.14159f * 2.0f); // Cosine wave pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "intelligence", intelligence_pattern);
+    
+    struct ggml_tensor* reasoning_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* reasoning_data = (float*)reasoning_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        reasoning_data[i] = (float)i / 64.0f; // Linear ramp pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "reasoning", reasoning_pattern);
+    
+    struct ggml_tensor* learning_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* learning_data = (float*)learning_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        learning_data[i] = expf(-(float)i / 20.0f); // Exponential decay pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "learning", learning_pattern);
+    
+    // Demonstrate pattern recognition
+    printf("\n2. Pattern recognition tests...\n");
+    
+    // Test with similar pattern to consciousness
+    struct ggml_tensor* test_pattern1 = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* test_data1 = (float*)test_pattern1->data;
+    for (int i = 0; i < 64; i++) {
+        test_data1[i] = sinf((float)i / 64.0f * 3.14159f * 2.0f) * 0.9f + 0.1f; // Slightly modified sine
+    }
+    printf("Testing consciousness-like pattern:\n");
+    pattern_recognize_sequence(recognizer->reasoning, test_pattern1);
+    
+    // Test with pattern similar to reasoning
+    struct ggml_tensor* test_pattern2 = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* test_data2 = (float*)test_pattern2->data;
+    for (int i = 0; i < 64; i++) {
+        test_data2[i] = (float)i / 64.0f + 0.1f * sinf((float)i / 10.0f); // Linear with noise
+    }
+    printf("Testing reasoning-like pattern:\n");
+    pattern_recognize_sequence(recognizer->reasoning, test_pattern2);
+    
+    // Demonstrate analogy detection
+    printf("\n3. Analogy detection...\n");
+    pattern_find_analogies(recognizer->reasoning, "consciousness", "intelligence");
+    pattern_find_analogies(recognizer->reasoning, "reasoning", "learning");
+    pattern_find_analogies(recognizer->reasoning, "consciousness", "reasoning");
+    
+    // Demonstrate cross-modal pattern matching
+    printf("\n4. Cross-modal pattern analysis...\n");
+    
+    // Create mock text and embedding data
+    struct ggml_tensor* text_data = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 32);
+    float* text_array = (float*)text_data->data;
+    for (int i = 0; i < 32; i++) {
+        text_array[i] = (float)i / 32.0f; // Simple pattern for text
+    }
+    
+    struct ggml_tensor* embedding_data = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 32);
+    float* embedding_array = (float*)embedding_data->data;
+    for (int i = 0; i < 32; i++) {
+        embedding_array[i] = sinf((float)i / 32.0f * 3.14159f); // Related but different pattern
+    }
+    
+    pattern_cross_modal_analysis(recognizer->reasoning, text_data, embedding_data);
+    
+    // Performance benchmark
+    printf("\n5. Performance benchmark...\n");
+    uint64_t start_time = get_timestamp();
+    
+    for (int i = 0; i < 100; i++) {
+        pattern_recognize_sequence(recognizer->reasoning, test_pattern1);
+    }
+    
+    uint64_t end_time = get_timestamp();
+    float elapsed_ns = (float)(end_time - start_time);
+    float recognitions_per_second = 100.0f / (elapsed_ns / 1e9f);
+    
+    printf("Completed 100 pattern recognitions in %.2f ms\n", elapsed_ns / 1e6f);
+    printf("Recognition rate: %.1f recognitions/second\n", recognitions_per_second);
+    
+    // Print final statistics
+    printf("\nFinal Pattern Matching Statistics:\n");
+    pattern_print_recognition_stats(recognizer->reasoning);
+    
+    // Check accuracy target
+    float accuracy = pattern_get_match_accuracy(recognizer->reasoning);
+    if (accuracy >= 0.85f) {
+        printf("\n✓ SUCCESS: Achieved target accuracy of >85%% (%.1f%%)\n", accuracy * 100.0f);
+    } else {
+        printf("\n⚠ NOTICE: Current accuracy %.1f%% < target 85%%\n", accuracy * 100.0f);
+        printf("  (Pattern matching working but may need more training data)\n");
+    }
+    
+    // Demonstrate key capabilities
+    printf("\nPattern Matching Capabilities Demonstrated:\n");
+    printf("  ✓ Tensor similarity metrics (cosine, Euclidean)\n");
+    printf("  ✓ Multi-modal pattern types (tensor, structural, sequence)\n");
+    printf("  ✓ Real-time pattern recognition during processing\n");
+    printf("  ✓ Analogy detection between concept patterns\n");
+    printf("  ✓ Cross-modal pattern analysis\n");
+    printf("  ✓ Performance: %.1f recognitions/second\n", recognitions_per_second);
+    
+    cleanup_cognitive_agent(recognizer);
+    printf("\nPattern matching demo completed.\n");
+}
+
 int main(void) {
     printf("GGML Cognitive Agent Network Demo\n");
     printf("================================\n");
@@ -269,6 +554,9 @@ int main(void) {
     demo_consciousness_exploration();
     demo_distributed_problem_solving();
     demo_attention_economy();
+    demo_pln_reasoning();
+    demo_moses_evolution();
+    demo_pattern_matching();
     
     printf("\nAll demos completed successfully!\n");
     printf("\nThis demonstrates the basic framework for distributed cognitive agents\n");

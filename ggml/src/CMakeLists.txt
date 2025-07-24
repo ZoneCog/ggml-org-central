@@ -402,3 +402,6 @@ if (BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC  GGML_SHARED)
     endforeach()
 endif()
+
+# Add reasoning module for advanced cognitive capabilities
+add_subdirectory(reasoning)
