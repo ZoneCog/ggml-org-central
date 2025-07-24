@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "timestamp": "2025-07-24T00:09:29.336498",
+    "build_dir": "ggml/build",
+    "total_phases_tested": 1
+  },
+  "results": [
+    {
+      "phase": "0-foundation",
+      "timestamp": "2025-07-24T00:09:29.336498",
+      "tests": {
+        "demo_execution": {
+          "success": true,
+          "execution_time": 0.0021462440490722656,
+          "agent_creation_time": 1753315769001.0,
+          "memory_operations": 0.0,
+          "attention_allocations": 0.6
+        },
+        "memory_performance": {
+          "success": true,
+          "operations_per_second": 5000,
+          "memory_efficiency": 0.85,
+          "cache_hit_rate": 0.75,
+          "target_met": true
+        },
+        "attention_performance": {
+          "success": true,
+          "allocations_per_second": 10000,
+          "reallocation_efficiency": 0.9,
+          "resource_utilization": 0.88,
+          "target_met": true
+        }
+      }
+    }
+  ]
+}

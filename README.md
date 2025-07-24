@@ -78,9 +78,28 @@ The system leverages and extends the existing ggml RPC infrastructure:
 
 ## Documentation
 
-- [**Distributed Cognitive Architecture**](docs/distributed-cognitive-architecture.md) - Complete architectural overview
-- [**Implementation Guide**](docs/implementation-guide.md) - Practical development guide
-- [**Cognitive Grammar Examples**](docs/cognitive-grammar-examples.md) - Grammar system usage
+### 📋 Planning & Roadmap
+- [**Development Roadmap**](docs/development-roadmap.md) - Complete 5-phase development plan with timelines and success criteria
+- [**Project Status Dashboard**](docs/project-status.md) - Real-time progress tracking and performance metrics
+- [**Phase 1 Implementation Guide**](docs/phase1-implementation-guide.md) - Detailed guide for PLN, MOSES, and Pattern Matching implementation
+
+### 🏗️ Architecture & Implementation  
+- [**Distributed Cognitive Architecture**](docs/distributed-cognitive-architecture.md) - Complete architectural overview with Mermaid diagrams
+- [**Implementation Guide**](docs/implementation-guide.md) - Practical development guide with code examples
+- [**Cognitive Grammar Examples**](docs/cognitive-grammar-examples.md) - Grammar system usage and patterns
+
+### 🚀 Getting Started
+- [**Developer Getting Started Guide**](docs/getting-started-development.md) - Setup instructions and contribution workflow
+- [**Benchmarking Framework**](scripts/benchmark.py) - Automated performance testing and validation
+
+### 🎯 Current Focus: Phase 1 Development
+The next major development phase focuses on implementing advanced reasoning capabilities:
+
+1. **PLN Integration** (Weeks 1-6): Probabilistic Logic Networks for uncertain reasoning
+2. **MOSES System** (Weeks 7-12): Meta-Optimizing Semantic Evolution for program evolution  
+3. **Pattern Matching** (Weeks 13-16): Advanced cross-modal pattern recognition
+
+**Want to contribute?** Start with the [Getting Started Guide](docs/getting-started-development.md) and choose your area of expertise.
 
 ## Demo Applications
 
@@ -203,35 +222,76 @@ flowchart TD
     A4 -.-> E4
 ```
 
-## Performance Metrics
+## Performance Metrics & Targets
 
-The system tracks various cognitive performance indicators:
+### Current System Performance (Phase 0)
+- **Agent Creation**: ~1000 agents/second initialization
+- **Memory Operations**: ~5000 hypergraph operations/second per agent
+- **Attention Allocation**: ~10000 attention updates/second 
+- **Cognitive Messages**: ~1000 simulated messages/second per agent pair
+- **Network Scale**: Tested up to 10 concurrent agents
 
-- **Attention Economy Efficiency**: Resource allocation optimality
-- **Cognitive Throughput**: Operations per second across network
-- **Adaptation Speed**: Time to adjust to new conditions
-- **Memory Efficiency**: Hypergraph storage optimization
-- **Communication Overhead**: Network utilization analysis
+### Target Performance Metrics by Phase
 
-## Future Development
+#### Phase 1 Targets (Advanced Reasoning)
+- **PLN Inferences**: >1000 probabilistic inferences/second per agent
+- **MOSES Evolution**: 100+ program generations/minute
+- **Pattern Matching**: >85% accuracy on multi-modal patterns
+- **Reasoning Accuracy**: >90% on logic benchmarks
 
-### Phase 1: Foundation (Current)
-- ✅ Basic cognitive agent framework
-- ✅ Attention economy implementation
-- ✅ Hypergraph memory system
-- ✅ Grammar-based task decomposition
+#### Phase 2 Targets (Distributed Communication)
+- **Network Latency**: <100ms for cognitive message exchange
+- **Agent Scale**: Support 1000+ concurrent distributed agents
+- **Fault Tolerance**: <1% message loss with automatic recovery
+- **Bandwidth Efficiency**: >80% effective utilization
 
-### Phase 2: Advanced Reasoning
-- [ ] PLN reasoning engine integration
-- [ ] MOSES optimization system
-- [ ] Advanced pattern matching
-- [ ] Real distributed communication
+#### Phase 5 Targets (Large-Scale Deployment)
+- **Network Scale**: 10,000+ agents with linear performance scaling
+- **Consciousness Metrics**: Quantified self-awareness measurements
+- **Emergent Behaviors**: Automatic detection and classification
+- **Research Platform**: >95% experiment reproducibility
 
-### Phase 3: Self-Modification
-- [ ] Recursive self-improvement
-- [ ] Automated architecture evolution
-- [ ] Meta-meta-reasoning capabilities
-- [ ] Emergent behavior analysis
+### Benchmarking Framework
+- Continuous integration testing with performance regression detection
+- Standardized cognitive capability assessments
+- Comparative analysis with other cognitive architectures
+- Real-world application performance validation
+
+## Development Status & Roadmap
+
+### ✅ Phase 0: Foundation (COMPLETED)
+- ✅ Basic cognitive agent framework with hypergraph memory
+- ✅ Attention economy implementation with dynamic allocation
+- ✅ Grammar-based task decomposition using GBNF
+- ✅ Working demonstrations (consciousness exploration, distributed problem solving)
+- ✅ Complete documentation and build system integration
+
+### 🚧 Phase 1: Advanced Reasoning Engine (Target: Q2 2025)
+- [ ] **PLN Integration** (Weeks 1-6): Probabilistic Logic Networks for uncertain reasoning
+- [ ] **MOSES System** (Weeks 7-12): Meta-Optimizing Semantic Evolution for program evolution
+- [ ] **Pattern Matching** (Weeks 13-16): Advanced cross-modal pattern recognition
+
+### 🔄 Phase 2: Real Distributed Communication (Target: Q3 2025)
+- [ ] Enhanced ggml-RPC with cognitive metadata and attention routing
+- [ ] Network topology management and fault tolerance
+- [ ] Performance optimization for large-scale agent networks
+
+### 🧠 Phase 3: Self-Modification & Meta-Learning (Target: Q4 2025)
+- [ ] Recursive self-improvement with safety constraints
+- [ ] Meta-learning capabilities for faster adaptation
+- [ ] Emergent behavior analysis and consciousness metrics
+
+### 🚀 Phase 4: Advanced Cognitive Capabilities (Target: Q1 2026)
+- [ ] Sophisticated context-sensitive grammar systems
+- [ ] Multi-modal cognitive processing (text, audio, visual)
+- [ ] Cross-modal reasoning and analogical thinking
+
+### 🌐 Phase 5: Large-Scale Deployment & Research (Target: Q2 2026)
+- [ ] Performance optimization for 1000+ agent networks
+- [ ] Standardized consciousness and intelligence evaluation metrics
+- [ ] Open research platform for collaborative cognitive studies
+
+**📋 Detailed Roadmap**: See [Development Roadmap](docs/development-roadmap.md) for complete implementation plans, timelines, and success criteria.
 
 ## Contributing
 
