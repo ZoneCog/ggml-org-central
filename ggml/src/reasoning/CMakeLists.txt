@@ -2,10 +2,12 @@
 
 set(REASONING_SOURCES
     pln-core.c
+    moses-core.c
 )
 
 set(REASONING_HEADERS
     pln-core.h
+    moses-core.h
 )
 
 # Create reasoning library

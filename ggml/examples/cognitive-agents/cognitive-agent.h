@@ -14,6 +14,9 @@ extern "C" {
 // Forward declaration for PLN integration
 struct pln_engine;
 
+// Forward declaration for MOSES integration  
+struct moses_engine;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -120,6 +123,9 @@ struct reasoning_engine {
     // PLN Integration
     struct pln_engine* pln_engine;
     
+    // MOSES Integration
+    struct moses_engine* moses_engine;
+    
     // Performance metrics
     float reasoning_accuracy;
     uint64_t inferences_made;
@@ -127,6 +133,10 @@ struct reasoning_engine {
     // PLN specific metrics
     float pln_inference_rate;
     float average_pln_confidence;
+    
+    // MOSES specific metrics
+    float best_program_fitness;
+    uint32_t evolution_generations;
 };
 
 // Main cognitive agent structure
@@ -187,6 +197,14 @@ int pln_perform_revision(reasoning_engine* reasoning, const char* belief1, const
 float pln_get_inference_rate(reasoning_engine* reasoning);
 void pln_add_belief(reasoning_engine* reasoning, const char* concept, float strength, float confidence);
 void pln_print_stats(reasoning_engine* reasoning);
+
+// MOSES Integration functions
+int init_moses_evolution(reasoning_engine* reasoning, size_t population_size);
+int moses_evolve_reasoning_strategies(reasoning_engine* reasoning, uint32_t generations);
+int moses_optimize_cognitive_program(reasoning_engine* reasoning, const char* problem_type);
+float moses_get_best_fitness(reasoning_engine* reasoning);
+void moses_print_evolution_stats(reasoning_engine* reasoning);
+int moses_self_modify_agent(reasoning_engine* reasoning);
 
 // Communication functions
 void send_cognitive_tensor(cognitive_agent* sender, uint64_t target_agent_id,

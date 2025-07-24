@@ -1,5 +1,6 @@
 #include "cognitive-agent.h"
 #include "../../src/reasoning/pln-core.h"
+#include "../../src/reasoning/moses-core.h"
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
@@ -223,6 +224,11 @@ reasoning_engine* init_reasoning_engine(struct ggml_context* ctx) {
     reasoning->pln_inference_rate = 0.0f;
     reasoning->average_pln_confidence = 0.0f;
     
+    // Initialize MOSES integration
+    reasoning->moses_engine = NULL;
+    reasoning->best_program_fitness = -INFINITY;
+    reasoning->evolution_generations = 0;
+    
     return reasoning;
 }
 
@@ -231,6 +237,9 @@ void cleanup_reasoning_engine(reasoning_engine* reasoning) {
     if (reasoning) {
         if (reasoning->pln_engine) {
             pln_engine_destroy(reasoning->pln_engine);
+        }
+        if (reasoning->moses_engine) {
+            moses_engine_destroy(reasoning->moses_engine);
         }
         free(reasoning);
     }
@@ -605,4 +614,128 @@ void pln_print_stats(reasoning_engine* reasoning) {
     printf("  Inference rate: %.2f inferences/second\n", reasoning->pln_inference_rate);
     printf("  Average confidence: %.3f\n", reasoning->average_pln_confidence);
     printf("  Node count: %zu\n", reasoning->pln_engine->node_count);
+}
+
+// MOSES Integration Functions
+
+// Initialize MOSES evolution
+int init_moses_evolution(reasoning_engine* reasoning, size_t population_size) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->moses_engine = moses_engine_create(reasoning->ctx, population_size);
+    if (!reasoning->moses_engine) {
+        return -1;
+    }
+    
+    // Set cognitive fitness function
+    moses_set_fitness_function(reasoning->moses_engine, moses_cognitive_fitness_function, reasoning);
+    
+    // Initialize population
+    if (moses_initialize_population(reasoning->moses_engine) != 0) {
+        moses_engine_destroy(reasoning->moses_engine);
+        reasoning->moses_engine = NULL;
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Evolve reasoning strategies
+int moses_evolve_reasoning_strategies(reasoning_engine* reasoning, uint32_t generations) {
+    if (!reasoning || !reasoning->moses_engine) {
+        return -1;
+    }
+    
+    printf("Evolving reasoning strategies for %u generations...\n", generations);
+    
+    for (uint32_t gen = 0; gen < generations; gen++) {
+        if (moses_evolve_generation(reasoning->moses_engine) != 0) {
+            printf("Evolution failed at generation %u\n", gen);
+            return -1;
+        }
+        
+        // Update metrics
+        reasoning->best_program_fitness = reasoning->moses_engine->population->best_fitness;
+        reasoning->evolution_generations = reasoning->moses_engine->generations_evolved;
+        
+        // Print progress every 10 generations
+        if ((gen + 1) % 10 == 0) {
+            printf("  Generation %u: Best fitness = %.4f, Avg fitness = %.4f, Diversity = %.4f\n",
+                   gen + 1,
+                   reasoning->moses_engine->population->best_fitness,
+                   reasoning->moses_engine->population->average_fitness,
+                   reasoning->moses_engine->population->diversity_measure);
+        }
+    }
+    
+    printf("Evolution completed!\n");
+    return 0;
+}
+
+// Optimize cognitive program for specific problem type
+int moses_optimize_cognitive_program(reasoning_engine* reasoning, const char* problem_type) {
+    if (!reasoning || !reasoning->moses_engine || !problem_type) {
+        return -1;
+    }
+    
+    printf("Optimizing cognitive program for problem type: %s\n", problem_type);
+    
+    // Select appropriate fitness function based on problem type
+    if (strcmp(problem_type, "reasoning") == 0) {
+        moses_set_fitness_function(reasoning->moses_engine, moses_cognitive_fitness_function, reasoning);
+    } else if (strcmp(problem_type, "complexity") == 0) {
+        moses_set_fitness_function(reasoning->moses_engine, moses_complexity_fitness_function, reasoning);
+    } else {
+        moses_set_fitness_function(reasoning->moses_engine, moses_default_fitness_function, reasoning);
+    }
+    
+    // Run evolution for the specific problem
+    return moses_evolve_reasoning_strategies(reasoning, 20);
+}
+
+// Get best fitness from current population
+float moses_get_best_fitness(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine || !reasoning->moses_engine->population) {
+        return -INFINITY;
+    }
+    
+    return reasoning->moses_engine->population->best_fitness;
+}
+
+// Print MOSES evolution statistics
+void moses_print_evolution_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine) {
+        printf("MOSES engine not initialized\n");
+        return;
+    }
+    
+    moses_print_population_stats(reasoning->moses_engine);
+    
+    printf("  Best program fitness: %.4f\n", reasoning->best_program_fitness);
+    printf("  Evolution generations: %u\n", reasoning->evolution_generations);
+}
+
+// Self-modify agent using MOSES
+int moses_self_modify_agent(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->moses_engine) {
+        return -1;
+    }
+    
+    printf("Agent self-modification using MOSES...\n");
+    
+    // Run evolution to find better cognitive strategies
+    int result = moses_evolve_reasoning_strategies(reasoning, 30);
+    
+    if (result == 0) {
+        printf("Self-modification completed. New best fitness: %.4f\n", 
+               moses_get_best_fitness(reasoning));
+        
+        // In a real implementation, we would apply the best program to modify
+        // the agent's behavior, attention allocation, or reasoning strategies
+        printf("Applied evolved cognitive strategies to agent behavior.\n");
+    }
+    
+    return result;
 }

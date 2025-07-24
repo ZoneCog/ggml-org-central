@@ -348,6 +348,70 @@ void demo_pln_reasoning(void) {
     printf("\nPLN reasoning demo completed.\n");
 }
 
+// Demo: MOSES Evolution Engine
+void demo_moses_evolution(void) {
+    printf("\n=== MOSES Evolution Engine Demo ===\n");
+    
+    // Create a cognitive agent with evolutionary capabilities
+    cognitive_agent* evolver = create_cognitive_agent("localhost:6001");
+    
+    // Initialize MOSES evolution engine
+    if (init_moses_evolution(evolver->reasoning, 20) != 0) {
+        printf("Failed to initialize MOSES evolution engine\n");
+        cleanup_cognitive_agent(evolver);
+        return;
+    }
+    
+    printf("MOSES evolution engine initialized with population of 20\n");
+    
+    // Demonstrate evolution for different problem types
+    printf("\n1. Evolving general cognitive strategies...\n");
+    moses_evolve_reasoning_strategies(evolver->reasoning, 15);
+    moses_print_evolution_stats(evolver->reasoning);
+    
+    printf("\n2. Optimizing for reasoning tasks...\n");
+    moses_optimize_cognitive_program(evolver->reasoning, "reasoning");
+    
+    printf("\n3. Optimizing for complexity constraints...\n");
+    moses_optimize_cognitive_program(evolver->reasoning, "complexity");
+    
+    // Demonstrate self-modification
+    printf("\n4. Agent self-modification demonstration...\n");
+    float initial_fitness = moses_get_best_fitness(evolver->reasoning);
+    printf("Initial best fitness: %.4f\n", initial_fitness);
+    
+    moses_self_modify_agent(evolver->reasoning);
+    
+    float final_fitness = moses_get_best_fitness(evolver->reasoning);
+    printf("Final best fitness: %.4f\n", final_fitness);
+    
+    if (final_fitness > initial_fitness) {
+        printf("✓ SUCCESS: Agent successfully improved through self-modification!\n");
+        printf("  Improvement: %.4f → %.4f (gain: %.4f)\n", 
+               initial_fitness, final_fitness, final_fitness - initial_fitness);
+    } else {
+        printf("⚠ NOTICE: No improvement detected (evolution may need more generations)\n");
+    }
+    
+    // Print final statistics
+    printf("\nFinal MOSES Statistics:\n");
+    moses_print_evolution_stats(evolver->reasoning);
+    
+    // Performance analysis
+    uint32_t total_generations = evolver->reasoning->evolution_generations;
+    if (total_generations > 0) {
+        printf("\nEvolution Summary:\n");
+        printf("  Total generations: %u\n", total_generations);
+        printf("  Programs evaluated: ~%u\n", total_generations * 20); // Approximate
+        printf("  Final fitness: %.4f\n", final_fitness);
+        printf("  Convergence achieved: %s\n", 
+               (final_fitness > -1.0f) ? "Yes" : "Partial");
+    }
+    
+    cleanup_cognitive_agent(evolver);
+    printf("\nMOSES evolution demo completed.\n");
+}
+
 int main(void) {
     printf("GGML Cognitive Agent Network Demo\n");
     printf("================================\n");
@@ -357,6 +421,7 @@ int main(void) {
     demo_distributed_problem_solving();
     demo_attention_economy();
     demo_pln_reasoning();
+    demo_moses_evolution();
     
     printf("\nAll demos completed successfully!\n");
     printf("\nThis demonstrates the basic framework for distributed cognitive agents\n");
