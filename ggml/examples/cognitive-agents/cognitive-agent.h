@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+// Forward declaration for PLN integration
+struct pln_engine;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -110,13 +113,20 @@ struct task_orchestrator {
 struct reasoning_engine {
     struct ggml_context* ctx;
     
-    // Reasoning state
+    // Traditional reasoning state
     struct ggml_tensor* current_beliefs;
     struct ggml_tensor* inference_rules;
+    
+    // PLN Integration
+    struct pln_engine* pln_engine;
     
     // Performance metrics
     float reasoning_accuracy;
     uint64_t inferences_made;
+    
+    // PLN specific metrics
+    float pln_inference_rate;
+    float average_pln_confidence;
 };
 
 // Main cognitive agent structure
@@ -167,6 +177,16 @@ void cleanup_task_orchestrator(task_orchestrator* orch);
 // Reasoning engine functions
 reasoning_engine* init_reasoning_engine(struct ggml_context* ctx);
 void cleanup_reasoning_engine(reasoning_engine* reasoning);
+
+// PLN Integration functions
+int init_pln_reasoning(reasoning_engine* reasoning);
+int pln_perform_deduction(reasoning_engine* reasoning, const char* premise1, const char* premise2);
+int pln_perform_induction(reasoning_engine* reasoning, const char* evidence_ab, const char* evidence_a);
+int pln_perform_abduction(reasoning_engine* reasoning, const char* rule_ab, const char* evidence_b);
+int pln_perform_revision(reasoning_engine* reasoning, const char* belief1, const char* belief2);
+float pln_get_inference_rate(reasoning_engine* reasoning);
+void pln_add_belief(reasoning_engine* reasoning, const char* concept, float strength, float confidence);
+void pln_print_stats(reasoning_engine* reasoning);
 
 // Communication functions
 void send_cognitive_tensor(cognitive_agent* sender, uint64_t target_agent_id,

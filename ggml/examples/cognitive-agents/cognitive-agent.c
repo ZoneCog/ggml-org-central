@@ -1,4 +1,5 @@
 #include "cognitive-agent.h"
+#include "../../src/reasoning/pln-core.h"
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
@@ -216,12 +217,21 @@ reasoning_engine* init_reasoning_engine(struct ggml_context* ctx) {
     reasoning->inference_rules = NULL;
     reasoning->reasoning_accuracy = 0.75f;
     reasoning->inferences_made = 0;
+    
+    // Initialize PLN integration
+    reasoning->pln_engine = NULL;
+    reasoning->pln_inference_rate = 0.0f;
+    reasoning->average_pln_confidence = 0.0f;
+    
     return reasoning;
 }
 
 // Cleanup reasoning engine
 void cleanup_reasoning_engine(reasoning_engine* reasoning) {
     if (reasoning) {
+        if (reasoning->pln_engine) {
+            pln_engine_destroy(reasoning->pln_engine);
+        }
         free(reasoning);
     }
 }
@@ -392,4 +402,207 @@ void process_incoming_tensor(cognitive_agent* receiver,
             printf("  Processing unknown cognitive type\n");
             break;
     }
+}
+
+// PLN Integration Functions
+
+// Initialize PLN reasoning
+int init_pln_reasoning(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->pln_engine = pln_engine_create(reasoning->ctx);
+    if (!reasoning->pln_engine) {
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Perform PLN deduction
+int pln_perform_deduction(reasoning_engine* reasoning, const char* premise1, const char* premise2) {
+    if (!reasoning || !reasoning->pln_engine || !premise1 || !premise2) {
+        return -1;
+    }
+    
+    // Find or create nodes for premises
+    struct pln_node* node1 = pln_node_find_by_name(reasoning->pln_engine, premise1);
+    struct pln_node* node2 = pln_node_find_by_name(reasoning->pln_engine, premise2);
+    
+    if (!node1) {
+        node1 = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, premise1);
+        node1->truth_value = pln_truth_value_create(0.8f, 0.7f, 5.0f);
+    }
+    
+    if (!node2) {
+        node2 = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, premise2);
+        node2->truth_value = pln_truth_value_create(0.75f, 0.8f, 4.0f);
+    }
+    
+    // Perform deduction
+    struct pln_inference_result* result = pln_deduction(reasoning->pln_engine, node1, node2);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Deduction: %s ∧ %s ⇒ conclusion (strength: %.3f, confidence: %.3f)\n",
+               premise1, premise2, 
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN induction
+int pln_perform_induction(reasoning_engine* reasoning, const char* evidence_ab, const char* evidence_a) {
+    if (!reasoning || !reasoning->pln_engine || !evidence_ab || !evidence_a) {
+        return -1;
+    }
+    
+    struct pln_node* node_ab = pln_node_find_by_name(reasoning->pln_engine, evidence_ab);
+    struct pln_node* node_a = pln_node_find_by_name(reasoning->pln_engine, evidence_a);
+    
+    if (!node_ab) {
+        node_ab = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_ab);
+        node_ab->truth_value = pln_truth_value_create(0.7f, 0.6f, 3.0f);
+    }
+    
+    if (!node_a) {
+        node_a = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_a);
+        node_a->truth_value = pln_truth_value_create(0.85f, 0.9f, 10.0f);
+    }
+    
+    struct pln_inference_result* result = pln_induction(reasoning->pln_engine, node_ab, node_a);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Induction: Generalized from %s and %s (strength: %.3f, confidence: %.3f)\n",
+               evidence_ab, evidence_a,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN abduction
+int pln_perform_abduction(reasoning_engine* reasoning, const char* rule_ab, const char* evidence_b) {
+    if (!reasoning || !reasoning->pln_engine || !rule_ab || !evidence_b) {
+        return -1;
+    }
+    
+    struct pln_node* rule = pln_node_find_by_name(reasoning->pln_engine, rule_ab);
+    struct pln_node* evidence = pln_node_find_by_name(reasoning->pln_engine, evidence_b);
+    
+    if (!rule) {
+        rule = pln_node_create(reasoning->pln_engine, PLN_NODE_IMPLICATION_LINK, NULL, rule_ab);
+        rule->truth_value = pln_truth_value_create(0.8f, 0.7f, 6.0f);
+    }
+    
+    if (!evidence) {
+        evidence = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, evidence_b);
+        evidence->truth_value = pln_truth_value_create(0.9f, 0.85f, 8.0f);
+    }
+    
+    struct pln_inference_result* result = pln_abduction(reasoning->pln_engine, rule, evidence);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Abduction: Hypothesis from %s and %s (strength: %.3f, confidence: %.3f)\n",
+               rule_ab, evidence_b,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Perform PLN revision
+int pln_perform_revision(reasoning_engine* reasoning, const char* belief1, const char* belief2) {
+    if (!reasoning || !reasoning->pln_engine || !belief1 || !belief2) {
+        return -1;
+    }
+    
+    struct pln_node* node1 = pln_node_find_by_name(reasoning->pln_engine, belief1);
+    struct pln_node* node2 = pln_node_find_by_name(reasoning->pln_engine, belief2);
+    
+    if (!node1) {
+        node1 = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, belief1);
+        node1->truth_value = pln_truth_value_create(0.7f, 0.6f, 4.0f);
+    }
+    
+    if (!node2) {
+        node2 = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, belief2);
+        node2->truth_value = pln_truth_value_create(0.8f, 0.7f, 6.0f);
+    }
+    
+    struct pln_inference_result* result = pln_revision(reasoning->pln_engine, node1, node2);
+    
+    if (result) {
+        reasoning->inferences_made++;
+        reasoning->pln_inference_rate = pln_engine_get_inference_rate(reasoning->pln_engine);
+        reasoning->average_pln_confidence = reasoning->pln_engine->average_confidence;
+        
+        printf("PLN Revision: Combined %s and %s (strength: %.3f, confidence: %.3f)\n",
+               belief1, belief2,
+               result->truth_value.strength, 
+               result->truth_value.confidence);
+        
+        pln_inference_result_destroy(result);
+        return 0;
+    }
+    
+    return -1;
+}
+
+// Get PLN inference rate
+float pln_get_inference_rate(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pln_engine) {
+        return 0.0f;
+    }
+    
+    return pln_engine_get_inference_rate(reasoning->pln_engine);
+}
+
+// Add belief to PLN
+void pln_add_belief(reasoning_engine* reasoning, const char* concept, float strength, float confidence) {
+    if (!reasoning || !reasoning->pln_engine || !concept) {
+        return;
+    }
+    
+    struct pln_node* node = pln_node_create(reasoning->pln_engine, PLN_NODE_CONCEPT, NULL, concept);
+    node->truth_value = pln_truth_value_create(strength, confidence, 1.0f);
+}
+
+// Print PLN statistics
+void pln_print_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pln_engine) {
+        printf("PLN engine not initialized\n");
+        return;
+    }
+    
+    printf("PLN Statistics:\n");
+    printf("  Total inferences: %lu\n", reasoning->pln_engine->inferences_made);
+    printf("  Inference rate: %.2f inferences/second\n", reasoning->pln_inference_rate);
+    printf("  Average confidence: %.3f\n", reasoning->average_pln_confidence);
+    printf("  Node count: %zu\n", reasoning->pln_engine->node_count);
 }

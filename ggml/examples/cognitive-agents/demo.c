@@ -261,6 +261,93 @@ void demo_attention_economy(void) {
     printf("\nAttention economy demo completed.\n");
 }
 
+// Demo: PLN Reasoning Engine
+void demo_pln_reasoning(void) {
+    printf("\n=== PLN Reasoning Engine Demo ===\n");
+    
+    // Create a cognitive agent with PLN reasoning
+    cognitive_agent* reasoner = create_cognitive_agent("localhost:7001");
+    
+    // Initialize PLN reasoning engine
+    if (init_pln_reasoning(reasoner->reasoning) != 0) {
+        printf("Failed to initialize PLN reasoning engine\n");
+        cleanup_cognitive_agent(reasoner);
+        return;
+    }
+    
+    printf("PLN reasoning engine initialized successfully\n");
+    
+    // Add some beliefs to the PLN system
+    printf("\nAdding beliefs to PLN system...\n");
+    pln_add_belief(reasoner->reasoning, "humans_are_conscious", 0.9f, 0.8f);
+    pln_add_belief(reasoner->reasoning, "consciousness_requires_self_awareness", 0.8f, 0.7f);
+    pln_add_belief(reasoner->reasoning, "ai_systems_process_information", 0.95f, 0.9f);
+    pln_add_belief(reasoner->reasoning, "complex_systems_exhibit_emergence", 0.75f, 0.6f);
+    
+    // Demonstrate PLN inference rules
+    printf("\nDemonstrating PLN inference rules...\n");
+    
+    // Deduction: If humans are conscious AND consciousness requires self-awareness
+    // Then humans have self-awareness
+    printf("\n1. PLN Deduction Example:\n");
+    pln_perform_deduction(reasoner->reasoning, 
+                         "humans_are_conscious", 
+                         "consciousness_requires_self_awareness");
+    
+    // Induction: Generalize from specific evidence
+    printf("\n2. PLN Induction Example:\n");
+    pln_perform_induction(reasoner->reasoning,
+                         "ai_systems_process_information",
+                         "complex_systems_exhibit_emergence");
+    
+    // Abduction: Generate hypothesis from observation
+    printf("\n3. PLN Abduction Example:\n");
+    pln_perform_abduction(reasoner->reasoning,
+                         "consciousness_requires_self_awareness",
+                         "humans_are_conscious");
+    
+    // Revision: Combine conflicting evidence
+    printf("\n4. PLN Revision Example:\n");
+    pln_add_belief(reasoner->reasoning, "ai_consciousness_possibility", 0.3f, 0.5f);
+    pln_add_belief(reasoner->reasoning, "ai_consciousness_evidence", 0.7f, 0.6f);
+    pln_perform_revision(reasoner->reasoning,
+                        "ai_consciousness_possibility",
+                        "ai_consciousness_evidence");
+    
+    // Demonstrate performance
+    printf("\n5. Performance Test:\n");
+    printf("Running rapid inference sequence...\n");
+    
+    uint64_t start_time = get_timestamp();
+    for (int i = 0; i < 100; i++) {
+        pln_perform_deduction(reasoner->reasoning, 
+                             "humans_are_conscious", 
+                             "consciousness_requires_self_awareness");
+    }
+    uint64_t end_time = get_timestamp();
+    
+    float elapsed_ns = (float)(end_time - start_time);
+    float inferences_per_second = 100.0f / (elapsed_ns / 1e9f);
+    
+    printf("Completed 100 deductions in %.2f ms\n", elapsed_ns / 1e6f);
+    printf("Inference rate: %.1f inferences/second\n", inferences_per_second);
+    
+    // Print final statistics
+    printf("\nFinal PLN Statistics:\n");
+    pln_print_stats(reasoner->reasoning);
+    
+    // Verify performance target
+    if (inferences_per_second >= 1000.0f) {
+        printf("\n✓ SUCCESS: Achieved target of >1000 PLN inferences/second!\n");
+    } else {
+        printf("\n⚠ NOTICE: Current rate %.1f < target 1000 inferences/second\n", inferences_per_second);
+        printf("  (This may be acceptable for this basic implementation)\n");
+    }
+    
+    cleanup_cognitive_agent(reasoner);
+    printf("\nPLN reasoning demo completed.\n");
+}
+
 int main(void) {
     printf("GGML Cognitive Agent Network Demo\n");
     printf("================================\n");
@@ -269,6 +356,7 @@ int main(void) {
     demo_consciousness_exploration();
     demo_distributed_problem_solving();
     demo_attention_economy();
+    demo_pln_reasoning();
     
     printf("\nAll demos completed successfully!\n");
     printf("\nThis demonstrates the basic framework for distributed cognitive agents\n");
