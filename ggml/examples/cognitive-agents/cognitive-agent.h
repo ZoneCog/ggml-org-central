@@ -17,6 +17,9 @@ struct pln_engine;
 // Forward declaration for MOSES integration  
 struct moses_engine;
 
+// Forward declaration for Pattern Matcher integration
+struct pattern_matcher;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -126,6 +129,9 @@ struct reasoning_engine {
     // MOSES Integration
     struct moses_engine* moses_engine;
     
+    // Pattern Matcher Integration
+    struct pattern_matcher* pattern_matcher;
+    
     // Performance metrics
     float reasoning_accuracy;
     uint64_t inferences_made;
@@ -137,6 +143,10 @@ struct reasoning_engine {
     // MOSES specific metrics
     float best_program_fitness;
     uint32_t evolution_generations;
+    
+    // Pattern matching metrics
+    float pattern_match_accuracy;
+    uint64_t patterns_recognized;
 };
 
 // Main cognitive agent structure
@@ -205,6 +215,15 @@ int moses_optimize_cognitive_program(reasoning_engine* reasoning, const char* pr
 float moses_get_best_fitness(reasoning_engine* reasoning);
 void moses_print_evolution_stats(reasoning_engine* reasoning);
 int moses_self_modify_agent(reasoning_engine* reasoning);
+
+// Pattern Matching Integration functions
+int init_pattern_matching(reasoning_engine* reasoning);
+int pattern_add_knowledge_pattern(reasoning_engine* reasoning, const char* concept, struct ggml_tensor* data);
+int pattern_recognize_sequence(reasoning_engine* reasoning, struct ggml_tensor* sequence_data);
+int pattern_find_analogies(reasoning_engine* reasoning, const char* source_concept, const char* target_concept);
+float pattern_get_match_accuracy(reasoning_engine* reasoning);
+void pattern_print_recognition_stats(reasoning_engine* reasoning);
+int pattern_cross_modal_analysis(reasoning_engine* reasoning, struct ggml_tensor* text, struct ggml_tensor* embedding);
 
 // Communication functions
 void send_cognitive_tensor(cognitive_agent* sender, uint64_t target_agent_id,

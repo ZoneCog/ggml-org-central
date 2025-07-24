@@ -3,11 +3,13 @@
 set(REASONING_SOURCES
     pln-core.c
     moses-core.c
+    pattern-matcher.c
 )
 
 set(REASONING_HEADERS
     pln-core.h
     moses-core.h
+    pattern-matcher.h
 )
 
 # Create reasoning library

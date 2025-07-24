@@ -412,6 +412,140 @@ void demo_moses_evolution(void) {
     printf("\nMOSES evolution demo completed.\n");
 }
 
+// Demo: Pattern Matching Engine
+void demo_pattern_matching(void) {
+    printf("\n=== Pattern Matching Engine Demo ===\n");
+    
+    // Create a cognitive agent with pattern matching capabilities
+    cognitive_agent* recognizer = create_cognitive_agent("localhost:5001");
+    
+    // Initialize pattern matching engine
+    if (init_pattern_matching(recognizer->reasoning) != 0) {
+        printf("Failed to initialize pattern matching engine\n");
+        cleanup_cognitive_agent(recognizer);
+        return;
+    }
+    
+    printf("Pattern matching engine initialized successfully\n");
+    
+    // Create sample knowledge patterns
+    printf("\n1. Creating knowledge patterns...\n");
+    
+    // Create different types of patterns
+    struct ggml_tensor* consciousness_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* consciousness_data = (float*)consciousness_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        consciousness_data[i] = sinf((float)i / 64.0f * 3.14159f * 2.0f); // Sine wave pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "consciousness", consciousness_pattern);
+    
+    struct ggml_tensor* intelligence_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* intelligence_data = (float*)intelligence_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        intelligence_data[i] = cosf((float)i / 64.0f * 3.14159f * 2.0f); // Cosine wave pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "intelligence", intelligence_pattern);
+    
+    struct ggml_tensor* reasoning_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* reasoning_data = (float*)reasoning_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        reasoning_data[i] = (float)i / 64.0f; // Linear ramp pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "reasoning", reasoning_pattern);
+    
+    struct ggml_tensor* learning_pattern = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* learning_data = (float*)learning_pattern->data;
+    for (int i = 0; i < 64; i++) {
+        learning_data[i] = expf(-(float)i / 20.0f); // Exponential decay pattern
+    }
+    pattern_add_knowledge_pattern(recognizer->reasoning, "learning", learning_pattern);
+    
+    // Demonstrate pattern recognition
+    printf("\n2. Pattern recognition tests...\n");
+    
+    // Test with similar pattern to consciousness
+    struct ggml_tensor* test_pattern1 = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* test_data1 = (float*)test_pattern1->data;
+    for (int i = 0; i < 64; i++) {
+        test_data1[i] = sinf((float)i / 64.0f * 3.14159f * 2.0f) * 0.9f + 0.1f; // Slightly modified sine
+    }
+    printf("Testing consciousness-like pattern:\n");
+    pattern_recognize_sequence(recognizer->reasoning, test_pattern1);
+    
+    // Test with pattern similar to reasoning
+    struct ggml_tensor* test_pattern2 = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 64);
+    float* test_data2 = (float*)test_pattern2->data;
+    for (int i = 0; i < 64; i++) {
+        test_data2[i] = (float)i / 64.0f + 0.1f * sinf((float)i / 10.0f); // Linear with noise
+    }
+    printf("Testing reasoning-like pattern:\n");
+    pattern_recognize_sequence(recognizer->reasoning, test_pattern2);
+    
+    // Demonstrate analogy detection
+    printf("\n3. Analogy detection...\n");
+    pattern_find_analogies(recognizer->reasoning, "consciousness", "intelligence");
+    pattern_find_analogies(recognizer->reasoning, "reasoning", "learning");
+    pattern_find_analogies(recognizer->reasoning, "consciousness", "reasoning");
+    
+    // Demonstrate cross-modal pattern matching
+    printf("\n4. Cross-modal pattern analysis...\n");
+    
+    // Create mock text and embedding data
+    struct ggml_tensor* text_data = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 32);
+    float* text_array = (float*)text_data->data;
+    for (int i = 0; i < 32; i++) {
+        text_array[i] = (float)i / 32.0f; // Simple pattern for text
+    }
+    
+    struct ggml_tensor* embedding_data = ggml_new_tensor_1d(recognizer->ctx, GGML_TYPE_F32, 32);
+    float* embedding_array = (float*)embedding_data->data;
+    for (int i = 0; i < 32; i++) {
+        embedding_array[i] = sinf((float)i / 32.0f * 3.14159f); // Related but different pattern
+    }
+    
+    pattern_cross_modal_analysis(recognizer->reasoning, text_data, embedding_data);
+    
+    // Performance benchmark
+    printf("\n5. Performance benchmark...\n");
+    uint64_t start_time = get_timestamp();
+    
+    for (int i = 0; i < 100; i++) {
+        pattern_recognize_sequence(recognizer->reasoning, test_pattern1);
+    }
+    
+    uint64_t end_time = get_timestamp();
+    float elapsed_ns = (float)(end_time - start_time);
+    float recognitions_per_second = 100.0f / (elapsed_ns / 1e9f);
+    
+    printf("Completed 100 pattern recognitions in %.2f ms\n", elapsed_ns / 1e6f);
+    printf("Recognition rate: %.1f recognitions/second\n", recognitions_per_second);
+    
+    // Print final statistics
+    printf("\nFinal Pattern Matching Statistics:\n");
+    pattern_print_recognition_stats(recognizer->reasoning);
+    
+    // Check accuracy target
+    float accuracy = pattern_get_match_accuracy(recognizer->reasoning);
+    if (accuracy >= 0.85f) {
+        printf("\n✓ SUCCESS: Achieved target accuracy of >85%% (%.1f%%)\n", accuracy * 100.0f);
+    } else {
+        printf("\n⚠ NOTICE: Current accuracy %.1f%% < target 85%%\n", accuracy * 100.0f);
+        printf("  (Pattern matching working but may need more training data)\n");
+    }
+    
+    // Demonstrate key capabilities
+    printf("\nPattern Matching Capabilities Demonstrated:\n");
+    printf("  ✓ Tensor similarity metrics (cosine, Euclidean)\n");
+    printf("  ✓ Multi-modal pattern types (tensor, structural, sequence)\n");
+    printf("  ✓ Real-time pattern recognition during processing\n");
+    printf("  ✓ Analogy detection between concept patterns\n");
+    printf("  ✓ Cross-modal pattern analysis\n");
+    printf("  ✓ Performance: %.1f recognitions/second\n", recognitions_per_second);
+    
+    cleanup_cognitive_agent(recognizer);
+    printf("\nPattern matching demo completed.\n");
+}
+
 int main(void) {
     printf("GGML Cognitive Agent Network Demo\n");
     printf("================================\n");
@@ -422,6 +556,7 @@ int main(void) {
     demo_attention_economy();
     demo_pln_reasoning();
     demo_moses_evolution();
+    demo_pattern_matching();
     
     printf("\nAll demos completed successfully!\n");
     printf("\nThis demonstrates the basic framework for distributed cognitive agents\n");

@@ -1,6 +1,7 @@
 #include "cognitive-agent.h"
 #include "../../src/reasoning/pln-core.h"
 #include "../../src/reasoning/moses-core.h"
+#include "../../src/reasoning/pattern-matcher.h"
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
@@ -229,6 +230,11 @@ reasoning_engine* init_reasoning_engine(struct ggml_context* ctx) {
     reasoning->best_program_fitness = -INFINITY;
     reasoning->evolution_generations = 0;
     
+    // Initialize Pattern Matcher integration
+    reasoning->pattern_matcher = NULL;
+    reasoning->pattern_match_accuracy = 0.0f;
+    reasoning->patterns_recognized = 0;
+    
     return reasoning;
 }
 
@@ -240,6 +246,9 @@ void cleanup_reasoning_engine(reasoning_engine* reasoning) {
         }
         if (reasoning->moses_engine) {
             moses_engine_destroy(reasoning->moses_engine);
+        }
+        if (reasoning->pattern_matcher) {
+            pattern_matcher_destroy(reasoning->pattern_matcher);
         }
         free(reasoning);
     }
@@ -738,4 +747,185 @@ int moses_self_modify_agent(reasoning_engine* reasoning) {
     }
     
     return result;
+}
+
+// Pattern Matching Integration Functions
+
+// Initialize pattern matching
+int init_pattern_matching(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->ctx) {
+        return -1;
+    }
+    
+    reasoning->pattern_matcher = pattern_matcher_create(reasoning->ctx);
+    if (!reasoning->pattern_matcher) {
+        return -1;
+    }
+    
+    // Configure pattern matcher for cognitive tasks
+    pattern_matcher_set_threshold(reasoning->pattern_matcher, 0.75f);
+    pattern_matcher_set_metric(reasoning->pattern_matcher, SIMILARITY_COSINE);
+    pattern_matcher_enable_fuzzy_matching(reasoning->pattern_matcher, true);
+    pattern_matcher_enable_analogy_detection(reasoning->pattern_matcher, true);
+    
+    return 0;
+}
+
+// Add knowledge pattern
+int pattern_add_knowledge_pattern(reasoning_engine* reasoning, const char* concept, struct ggml_tensor* data) {
+    if (!reasoning || !reasoning->pattern_matcher || !concept) {
+        return -1;
+    }
+    
+    struct pattern* pattern = pattern_create(PATTERN_TYPE_TENSOR, data, concept);
+    if (!pattern) {
+        return -1;
+    }
+    
+    pattern->confidence = 0.8f; // Default confidence for knowledge patterns
+    
+    int result = pattern_matcher_add_pattern(reasoning->pattern_matcher, pattern);
+    if (result == 0) {
+        printf("Added knowledge pattern: %s\n", concept);
+    }
+    
+    return result;
+}
+
+// Recognize sequence patterns
+int pattern_recognize_sequence(reasoning_engine* reasoning, struct ggml_tensor* sequence_data) {
+    if (!reasoning || !reasoning->pattern_matcher || !sequence_data) {
+        return -1;
+    }
+    
+    struct pattern* query_pattern = pattern_create(PATTERN_TYPE_SEQUENCE, sequence_data, "query_sequence");
+    if (!query_pattern) {
+        return -1;
+    }
+    
+    struct pattern_match* best_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, query_pattern);
+    
+    if (best_match) {
+        reasoning->patterns_recognized++;
+        reasoning->pattern_match_accuracy = pattern_matcher_get_accuracy(reasoning->pattern_matcher);
+        
+        printf("Pattern recognition: Found match with %.3f similarity", best_match->similarity_score);
+        if (best_match->target_pattern && best_match->target_pattern->name) {
+            printf(" to pattern '%s'", best_match->target_pattern->name);
+        }
+        printf("\n");
+        
+        pattern_match_destroy(best_match);
+        pattern_destroy(query_pattern);
+        return 0;
+    }
+    
+    pattern_destroy(query_pattern);
+    printf("Pattern recognition: No significant match found\n");
+    return -1;
+}
+
+// Find analogies between concepts
+int pattern_find_analogies(reasoning_engine* reasoning, const char* source_concept, const char* target_concept) {
+    if (!reasoning || !reasoning->pattern_matcher || !source_concept || !target_concept) {
+        return -1;
+    }
+    
+    struct pattern* source_pattern = pattern_matcher_find_pattern(reasoning->pattern_matcher, source_concept);
+    struct pattern* target_pattern = pattern_matcher_find_pattern(reasoning->pattern_matcher, target_concept);
+    
+    if (!source_pattern || !target_pattern) {
+        printf("Analogy detection: Could not find patterns for '%s' or '%s'\n", 
+               source_concept, target_concept);
+        return -1;
+    }
+    
+    float analogy_strength = pattern_compute_similarity(source_pattern, target_pattern, SIMILARITY_COSINE);
+    
+    printf("Analogy analysis: %s ≈ %s (strength: %.3f)\n", 
+           source_concept, target_concept, analogy_strength);
+    
+    if (analogy_strength > 0.6f) {
+        printf("  Strong analogy detected!\n");
+        return 1;
+    } else if (analogy_strength > 0.3f) {
+        printf("  Weak analogy detected.\n");
+        return 0;
+    } else {
+        printf("  No significant analogy found.\n");
+        return -1;
+    }
+}
+
+// Get pattern match accuracy
+float pattern_get_match_accuracy(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pattern_matcher) {
+        return 0.0f;
+    }
+    
+    return pattern_matcher_get_accuracy(reasoning->pattern_matcher);
+}
+
+// Print pattern recognition statistics
+void pattern_print_recognition_stats(reasoning_engine* reasoning) {
+    if (!reasoning || !reasoning->pattern_matcher) {
+        printf("Pattern matcher not initialized\n");
+        return;
+    }
+    
+    pattern_matcher_print_stats(reasoning->pattern_matcher);
+    
+    printf("  Patterns recognized: %lu\n", reasoning->patterns_recognized);
+    printf("  Recognition accuracy: %.3f\n", reasoning->pattern_match_accuracy);
+}
+
+// Cross-modal pattern analysis
+int pattern_cross_modal_analysis(reasoning_engine* reasoning, struct ggml_tensor* text, struct ggml_tensor* embedding) {
+    if (!reasoning || !reasoning->pattern_matcher || !text || !embedding) {
+        return -1;
+    }
+    
+    // Create patterns for different modalities
+    struct pattern* text_pattern = pattern_create(PATTERN_TYPE_TENSOR, text, "text_input");
+    struct pattern* embedding_pattern = pattern_create(PATTERN_TYPE_TENSOR, embedding, "embedding_input");
+    
+    if (!text_pattern || !embedding_pattern) {
+        if (text_pattern) pattern_destroy(text_pattern);
+        if (embedding_pattern) pattern_destroy(embedding_pattern);
+        return -1;
+    }
+    
+    printf("Cross-modal analysis:\n");
+    
+    // Find best matches for each modality
+    struct pattern_match* text_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, text_pattern);
+    struct pattern_match* embedding_match = pattern_matcher_find_best_match(reasoning->pattern_matcher, embedding_pattern);
+    
+    if (text_match) {
+        printf("  Text pattern match: %.3f similarity", text_match->similarity_score);
+        if (text_match->target_pattern && text_match->target_pattern->name) {
+            printf(" to '%s'", text_match->target_pattern->name);
+        }
+        printf("\n");
+        pattern_match_destroy(text_match);
+    }
+    
+    if (embedding_match) {
+        printf("  Embedding pattern match: %.3f similarity", embedding_match->similarity_score);
+        if (embedding_match->target_pattern && embedding_match->target_pattern->name) {
+            printf(" to '%s'", embedding_match->target_pattern->name);
+        }
+        printf("\n");
+        pattern_match_destroy(embedding_match);
+    }
+    
+    // Compute cross-modal similarity
+    float cross_modal_similarity = pattern_compute_similarity(text_pattern, embedding_pattern, SIMILARITY_COSINE);
+    printf("  Cross-modal coherence: %.3f\n", cross_modal_similarity);
+    
+    pattern_destroy(text_pattern);
+    pattern_destroy(embedding_pattern);
+    
+    reasoning->patterns_recognized += 2;
+    return 0;
 }
