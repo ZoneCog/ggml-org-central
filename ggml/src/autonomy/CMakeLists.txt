@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-# Build autonomy library
+# Build autonomy library - including Phase 5 components
 add_library(ggml-autonomy SHARED
     self-modification.c
     behavior-analysis.c
+    hierarchical-organization.c
+    research-platform.c
 )
 
 target_include_directories(ggml-autonomy PUBLIC
@@ -25,7 +27,7 @@ target_link_libraries(ggml-autonomy
 set_target_properties(ggml-autonomy PROPERTIES
     VERSION 1.0.0
     SOVERSION 1
-    PUBLIC_HEADER "self-modification.h;behavior-analysis.h"
+    PUBLIC_HEADER "self-modification.h;behavior-analysis.h;hierarchical-organization.h;research-platform.h"
 )
 
 # Add compile definitions

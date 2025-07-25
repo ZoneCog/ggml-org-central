@@ -6,12 +6,34 @@ add_executable(cognitive-agents-demo
     cognitive-agent.c
 )
 
+# Add Phase 5 large-scale deployment and research demo
+add_executable(phase5-demo
+    phase5-demo.c
+    cognitive-agent.c
+)
+
 target_include_directories(cognitive-agents-demo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include
 )
 
+target_include_directories(phase5-demo PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src/autonomy
+)
+
 target_link_libraries(cognitive-agents-demo
+    ggml-base
+    ggml-reasoning
+    ggml-autonomy
+    ggml-multimodal
+    ggml-rpc
+    ${CMAKE_THREAD_LIBS_INIT}
+    m  # Math library for sin/cos functions
+)
+
+target_link_libraries(phase5-demo
     ggml-base
     ggml-reasoning
     ggml-autonomy
@@ -26,7 +48,15 @@ set_target_properties(cognitive-agents-demo PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+set_target_properties(phase5-demo PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Add compile definitions
 target_compile_definitions(cognitive-agents-demo PRIVATE
+    _GNU_SOURCE
+)
+
+target_compile_definitions(phase5-demo PRIVATE
     _GNU_SOURCE
 )
