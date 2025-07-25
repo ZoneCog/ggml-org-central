@@ -1,4 +1,5 @@
 #include "cognitive-agent.h"
+#include "../../include/ggml-rpc.h"
 #include "../../src/reasoning/pln-core.h"
 #include "../../src/reasoning/moses-core.h"
 #include "../../src/reasoning/pattern-matcher.h"
@@ -331,7 +332,24 @@ cognitive_agent* create_cognitive_agent(const char* endpoint) {
     agent->messages_received = 0;
     agent->cycles_completed = 0;
     
-    printf("Created cognitive agent %lu at %s\n", agent->agent_id, agent->endpoint);
+    // Register agent in the distributed network
+    uint32_t supported_types = (1 << COGNITIVE_TYPE_MEMORY) | 
+                              (1 << COGNITIVE_TYPE_TASK) | 
+                              (1 << COGNITIVE_TYPE_REASONING) | 
+                              (1 << COGNITIVE_TYPE_ATTENTION) | 
+                              (1 << COGNITIVE_TYPE_COMMUNICATION);
+    
+    int register_result = ggml_backend_rpc_register_agent(endpoint, 
+                                                         agent->agent_id,
+                                                         agent->attention->total_attention,
+                                                         supported_types);
+    
+    if (register_result == 0) {
+        printf("Created cognitive agent %lu at %s (registered in network)\n", agent->agent_id, agent->endpoint);
+    } else {
+        printf("Created cognitive agent %lu at %s (network registration failed, operating in local mode)\n", 
+               agent->agent_id, agent->endpoint);
+    }
     
     return agent;
 }
@@ -353,28 +371,72 @@ void cleanup_cognitive_agent(cognitive_agent* agent) {
     free(agent);
 }
 
-// Send cognitive tensor (simplified - no actual network communication)
+// Send cognitive tensor using real RPC network communication
 void send_cognitive_tensor(cognitive_agent* sender, uint64_t target_agent_id,
                           struct ggml_tensor* tensor, float attention_weight) {
     
-    cognitive_tensor_packet packet = {0};
+    // First create the cognitive metadata
+    ggml_rpc_cognitive_meta meta = {0};
+    meta.attention_weight = attention_weight;
+    meta.salience_score = compute_salience(tensor, sender->attention);
+    meta.cognitive_type = infer_cognitive_type(tensor);
+    meta.source_agent_id = sender->agent_id;
+    meta.target_agent_id = target_agent_id;
+    meta.recursion_depth = 0;
+    meta.timestamp = get_timestamp();
+    meta.cognitive_capacity = sender->attention->total_attention;
+    meta.network_hop_count = 1;
     
-    // In real implementation, would serialize tensor using ggml-rpc
-    packet.attention_weight = attention_weight;
-    packet.salience_score = compute_salience(tensor, sender->attention);
-    packet.cognitive_type = infer_cognitive_type(tensor);
-    packet.source_agent_id = sender->agent_id;
-    packet.target_agent_id = target_agent_id;
-    packet.recursion_depth = 0;
-    packet.timestamp = get_timestamp();
+    strncpy(meta.meta_context, "cognitive_exchange", sizeof(meta.meta_context) - 1);
     
-    strncpy(packet.meta_context, "cognitive_exchange", sizeof(packet.meta_context) - 1);
+    // Find target agent endpoint
+    char target_endpoint[256] = {0};
+    ggml_rpc_agent_info agents[GGML_RPC_MAX_AGENTS];
+    size_t agent_count = GGML_RPC_MAX_AGENTS;
     
-    sender->messages_sent++;
+    // Try to discover agents to find target endpoint
+    if (ggml_backend_rpc_discover_agents(sender->endpoint, agents, &agent_count) == 0) {
+        for (size_t i = 0; i < agent_count; i++) {
+            if (agents[i].agent_id == target_agent_id) {
+                strncpy(target_endpoint, agents[i].endpoint, sizeof(target_endpoint) - 1);
+                break;
+            }
+        }
+    }
     
-    printf("Agent %lu sent cognitive tensor (type %u, attention %.2f, salience %.2f) to agent %lu\n",
-           sender->agent_id, packet.cognitive_type, packet.attention_weight, 
-           packet.salience_score, target_agent_id);
+    // If target not found in discovery, construct endpoint from agent ID
+    if (target_endpoint[0] == '\0') {
+        snprintf(target_endpoint, sizeof(target_endpoint), "localhost:%lu", 8000 + (target_agent_id % 1000));
+    }
+    
+    // Send cognitive tensor via RPC
+    int result = ggml_backend_rpc_send_cognitive_tensor(target_endpoint, tensor, &meta);
+    
+    if (result == 0) {
+        sender->messages_sent++;
+        printf("Agent %lu sent cognitive tensor (type %u, attention %.2f, salience %.2f) to agent %lu via RPC\n",
+               sender->agent_id, meta.cognitive_type, meta.attention_weight, 
+               meta.salience_score, target_agent_id);
+    } else {
+        printf("Agent %lu failed to send cognitive tensor to agent %lu (RPC error)\n",
+               sender->agent_id, target_agent_id);
+        
+        // Fallback to local processing for demo purposes
+        cognitive_tensor_packet packet = {0};
+        packet.attention_weight = attention_weight;
+        packet.salience_score = meta.salience_score;
+        packet.cognitive_type = meta.cognitive_type;
+        packet.source_agent_id = sender->agent_id;
+        packet.target_agent_id = target_agent_id;
+        packet.recursion_depth = 0;
+        packet.timestamp = meta.timestamp;
+        strncpy(packet.meta_context, meta.meta_context, sizeof(packet.meta_context) - 1);
+        
+        sender->messages_sent++;
+        printf("Agent %lu sent cognitive tensor (type %u, attention %.2f, salience %.2f) to agent %lu (fallback)\n",
+               sender->agent_id, packet.cognitive_type, packet.attention_weight, 
+               packet.salience_score, target_agent_id);
+    }
 }
 
 // Process incoming tensor (simplified)

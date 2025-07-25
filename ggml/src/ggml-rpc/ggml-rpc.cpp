@@ -10,6 +10,8 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <chrono>
+#include <cfloat>
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN
 #  ifndef NOMINMAX
@@ -74,6 +76,18 @@ struct rpc_tensor {
     uint64_t data;
     char name[GGML_MAX_NAME];
 
+    // Cognitive metadata extensions
+    float attention_weight;          // Economic attention value
+    uint32_t cognitive_type;         // Type of cognitive operation
+    uint64_t source_agent_id;        // Originating agent
+    uint64_t target_agent_id;        // Target agent
+    char meta_context[256];          // Context information
+    float salience_score;            // Relevance measure
+    uint32_t recursion_depth;        // Self-reference depth
+    uint64_t timestamp;              // When created
+    float cognitive_capacity;        // Agent's processing capacity
+    uint32_t network_hop_count;      // Number of network hops
+
     char padding[4];
 };
 
@@ -96,6 +110,19 @@ enum rpc_cmd {
     RPC_CMD_INIT_TENSOR,
     RPC_CMD_GET_ALLOC_SIZE,
     RPC_CMD_HELLO,
+    
+    // Cognitive RPC commands
+    RPC_CMD_SEND_COGNITIVE_TENSOR,
+    RPC_CMD_REGISTER_AGENT,
+    RPC_CMD_DISCOVER_AGENTS,
+    RPC_CMD_UPDATE_TOPOLOGY,
+    RPC_CMD_ROUTE_MESSAGE,
+    RPC_CMD_GET_NETWORK_LATENCY,
+    RPC_CMD_OPTIMIZE_BANDWIDTH,
+    RPC_CMD_START_MONITORING,
+    RPC_CMD_AGENT_HEARTBEAT,
+    RPC_CMD_BATCH_COGNITIVE_TENSORS,
+    
     RPC_CMD_COUNT,
 };
 
@@ -187,6 +214,66 @@ struct rpc_msg_get_device_memory_rsp {
     uint64_t free_mem;
     uint64_t total_mem;
 };
+
+// Cognitive RPC message structures
+struct rpc_msg_send_cognitive_tensor_req {
+    rpc_tensor tensor;
+};
+
+struct rpc_msg_send_cognitive_tensor_rsp {
+    uint8_t result;
+};
+
+struct rpc_msg_register_agent_req {
+    uint64_t agent_id;
+    float cognitive_capacity;
+    uint32_t supported_types;
+    char endpoint[256];
+};
+
+struct rpc_msg_register_agent_rsp {
+    uint8_t result;
+};
+
+struct rpc_msg_discover_agents_req {
+    uint32_t max_agents;
+};
+
+struct rpc_msg_discover_agents_rsp {
+    uint32_t agent_count;
+    struct {
+        uint64_t agent_id;
+        char endpoint[256];
+        float cognitive_capacity;
+        float current_load;
+        uint32_t supported_types;
+        uint64_t last_heartbeat;
+        float network_latency;
+    } agents[GGML_RPC_MAX_AGENTS];
+};
+
+struct rpc_msg_agent_heartbeat_req {
+    uint64_t agent_id;
+    float current_load;
+    uint64_t timestamp;
+};
+
+struct rpc_msg_agent_heartbeat_rsp {
+    uint8_t result;
+};
+
+struct rpc_msg_get_network_latency_rsp {
+    float latency_ms;
+};
+
+struct rpc_msg_optimize_bandwidth_req {
+    uint8_t enable_compression;
+};
+
+struct rpc_msg_optimize_bandwidth_rsp {
+    uint8_t result;
+};
+
 #pragma pack(pop)
 
 // RPC data structures
@@ -528,11 +615,45 @@ static rpc_tensor serialize_tensor(const ggml_tensor * tensor) {
     result.view_offs = tensor->view_offs;
     result.data = reinterpret_cast<uint64_t>(tensor->data);
 
+    // Initialize cognitive metadata to default values
+    result.attention_weight = 0.0f;
+    result.cognitive_type = 0;
+    result.source_agent_id = 0;
+    result.target_agent_id = 0;
+    memset(result.meta_context, 0, sizeof(result.meta_context));
+    result.salience_score = 0.0f;
+    result.recursion_depth = 0;
+    result.timestamp = 0;
+    result.cognitive_capacity = 0.0f;
+    result.network_hop_count = 0;
+
     // Avoid sending uninitialized data over the wire
     memset(result.name, 0, sizeof(result.name));
     memset(result.padding, 0, sizeof(result.padding));
 
     snprintf(result.name, GGML_MAX_NAME, "%s", tensor->name);
+    return result;
+}
+
+// Cognitive tensor serialization with metadata
+static rpc_tensor serialize_cognitive_tensor(const ggml_tensor * tensor, const ggml_rpc_cognitive_meta * meta) {
+    rpc_tensor result = serialize_tensor(tensor);
+    
+    // Add cognitive metadata
+    if (meta) {
+        result.attention_weight = meta->attention_weight;
+        result.cognitive_type = meta->cognitive_type;
+        result.source_agent_id = meta->source_agent_id;
+        result.target_agent_id = meta->target_agent_id;
+        strncpy(result.meta_context, meta->meta_context, sizeof(result.meta_context) - 1);
+        result.meta_context[sizeof(result.meta_context) - 1] = '\0';
+        result.salience_score = meta->salience_score;
+        result.recursion_depth = meta->recursion_depth;
+        result.timestamp = meta->timestamp;
+        result.cognitive_capacity = meta->cognitive_capacity;
+        result.network_hop_count = meta->network_hop_count;
+    }
+    
     return result;
 }
 
@@ -1812,5 +1933,261 @@ ggml_backend_dev_t ggml_backend_rpc_add_device(const char * endpoint) {
 
     return dev;
 }
+
+// Static network topology for managing distributed agents
+static ggml_rpc_network_topology global_network_topology = {{}, 0, {{0}}, 0};
+static std::mutex topology_mutex;
+
+// Helper function for getting current timestamp (used in cognitive metadata)
+static uint64_t get_timestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+}
+
+// Cognitive RPC API implementations
+
+int ggml_backend_rpc_send_cognitive_tensor(const char * endpoint,
+                                          struct ggml_tensor * tensor,
+                                          const ggml_rpc_cognitive_meta * meta) {
+    try {
+        std::shared_ptr<socket_t> sock = get_socket(endpoint);
+        if (!sock) {
+            GGML_PRINT_DEBUG("[%s] failed to get socket for %s\n", __func__, endpoint);
+            return -1;
+        }
+
+        rpc_msg_send_cognitive_tensor_req request;
+        request.tensor = serialize_cognitive_tensor(tensor, meta);
+
+        rpc_msg_send_cognitive_tensor_rsp response;
+        bool status = send_rpc_cmd(sock, RPC_CMD_SEND_COGNITIVE_TENSOR, &request, sizeof(request), &response, sizeof(response));
+        if (!status) {
+            return -1;
+        }
+
+        return response.result ? 0 : -1;
+    } catch (const std::exception & e) {
+        GGML_PRINT_DEBUG("[%s] error: %s\n", __func__, e.what());
+        return -1;
+    }
+}
+
+int ggml_backend_rpc_register_agent(const char * endpoint,
+                                   uint64_t agent_id,
+                                   float cognitive_capacity,
+                                   uint32_t supported_types) {
+    try {
+        std::shared_ptr<socket_t> sock = get_socket(endpoint);
+        if (!sock) {
+            GGML_PRINT_DEBUG("[%s] failed to get socket for %s\n", __func__, endpoint);
+            return -1;
+        }
+
+        rpc_msg_register_agent_req request;
+        request.agent_id = agent_id;
+        request.cognitive_capacity = cognitive_capacity;
+        request.supported_types = supported_types;
+        strncpy(request.endpoint, endpoint, sizeof(request.endpoint) - 1);
+        request.endpoint[sizeof(request.endpoint) - 1] = '\0';
+
+        rpc_msg_register_agent_rsp response;
+        bool status = send_rpc_cmd(sock, RPC_CMD_REGISTER_AGENT, &request, sizeof(request), &response, sizeof(response));
+        if (!status) {
+            return -1;
+        }
+
+        // Update local topology
+        std::lock_guard<std::mutex> lock(topology_mutex);
+        if (global_network_topology.agent_count < GGML_RPC_MAX_AGENTS) {
+            ggml_rpc_agent_info * agent = &global_network_topology.agents[global_network_topology.agent_count];
+            agent->agent_id = agent_id;
+            agent->cognitive_capacity = cognitive_capacity;
+            agent->current_load = 0.0f;
+            agent->supported_types = supported_types;
+            agent->last_heartbeat = get_timestamp();
+            agent->network_latency = 0.0f;
+            strncpy(agent->endpoint, endpoint, sizeof(agent->endpoint) - 1);
+            agent->endpoint[sizeof(agent->endpoint) - 1] = '\0';
+            global_network_topology.agent_count++;
+            global_network_topology.last_update = get_timestamp();
+        }
+
+        return response.result ? 0 : -1;
+    } catch (const std::exception & e) {
+        GGML_PRINT_DEBUG("[%s] error: %s\n", __func__, e.what());
+        return -1;
+    }
+}
+
+int ggml_backend_rpc_discover_agents(const char * endpoint,
+                                    ggml_rpc_agent_info * agents,
+                                    size_t * agent_count) {
+    try {
+        std::shared_ptr<socket_t> sock = get_socket(endpoint);
+        if (!sock) {
+            GGML_PRINT_DEBUG("[%s] failed to get socket for %s\n", __func__, endpoint);
+            return -1;
+        }
+
+        rpc_msg_discover_agents_req request;
+        request.max_agents = GGML_RPC_MAX_AGENTS;
+
+        rpc_msg_discover_agents_rsp response;
+        bool status = send_rpc_cmd(sock, RPC_CMD_DISCOVER_AGENTS, &request, sizeof(request), &response, sizeof(response));
+        if (!status) {
+            return -1;
+        }
+
+        size_t count = std::min((size_t)response.agent_count, *agent_count);
+        *agent_count = count;
+
+        for (size_t i = 0; i < count; i++) {
+            agents[i].agent_id = response.agents[i].agent_id;
+            agents[i].cognitive_capacity = response.agents[i].cognitive_capacity;
+            agents[i].current_load = response.agents[i].current_load;
+            agents[i].supported_types = response.agents[i].supported_types;
+            agents[i].last_heartbeat = response.agents[i].last_heartbeat;
+            agents[i].network_latency = response.agents[i].network_latency;
+            strncpy(agents[i].endpoint, response.agents[i].endpoint, sizeof(agents[i].endpoint) - 1);
+            agents[i].endpoint[sizeof(agents[i].endpoint) - 1] = '\0';
+        }
+
+        return 0;
+    } catch (const std::exception & e) {
+        GGML_PRINT_DEBUG("[%s] error: %s\n", __func__, e.what());
+        return -1;
+    }
+}
+
+int ggml_backend_rpc_update_network_topology(ggml_rpc_network_topology * topology) {
+    std::lock_guard<std::mutex> lock(topology_mutex);
+    
+    if (topology) {
+        memcpy(topology, &global_network_topology, sizeof(ggml_rpc_network_topology));
+    }
+    
+    return 0;
+}
+
+int ggml_backend_rpc_route_cognitive_message(const ggml_rpc_network_topology * topology,
+                                            uint64_t source_agent,
+                                            uint64_t target_agent,
+                                            uint32_t cognitive_type,
+                                            char * best_route,
+                                            size_t route_size) {
+    if (!topology || !best_route || route_size == 0) {
+        return -1;
+    }
+
+    // Suppress unused parameter warnings
+    (void)source_agent;
+    (void)target_agent;
+
+    // Simple routing: find agent with lowest latency that supports the cognitive type
+    float best_latency = FLT_MAX;
+    const ggml_rpc_agent_info * best_agent = nullptr;
+
+    for (size_t i = 0; i < topology->agent_count; i++) {
+        const ggml_rpc_agent_info * agent = &topology->agents[i];
+        
+        // Skip if agent doesn't support this cognitive type
+        if ((agent->supported_types & (1 << cognitive_type)) == 0) {
+            continue;
+        }
+        
+        // Skip if agent is overloaded
+        if (agent->current_load > 0.9f) {
+            continue;
+        }
+        
+        // Calculate effective latency (base latency + load penalty)
+        float effective_latency = agent->network_latency + (agent->current_load * 10.0f);
+        
+        if (effective_latency < best_latency) {
+            best_latency = effective_latency;
+            best_agent = agent;
+        }
+    }
+
+    if (best_agent) {
+        strncpy(best_route, best_agent->endpoint, route_size - 1);
+        best_route[route_size - 1] = '\0';
+        return 0;
+    }
+
+    return -1;
+}
+
+float ggml_backend_rpc_get_network_latency(const char * endpoint) {
+    try {
+        auto start = std::chrono::high_resolution_clock::now();
+        
+        std::shared_ptr<socket_t> sock = get_socket(endpoint);
+        if (!sock) {
+            return -1.0f;
+        }
+
+        // Send a simple ping command (using HELLO)
+        rpc_msg_hello_rsp response;
+        bool status = send_rpc_cmd(sock, RPC_CMD_HELLO, nullptr, 0, &response, sizeof(response));
+        if (!status) {
+            return -1.0f;
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        
+        return duration.count() / 1000.0f; // Convert to milliseconds
+    } catch (const std::exception & e) {
+        GGML_PRINT_DEBUG("[%s] error: %s\n", __func__, e.what());
+        return -1.0f;
+    }
+}
+
+int ggml_backend_rpc_optimize_bandwidth(const char * endpoint, bool enable_compression) {
+    try {
+        std::shared_ptr<socket_t> sock = get_socket(endpoint);
+        if (!sock) {
+            GGML_PRINT_DEBUG("[%s] failed to get socket for %s\n", __func__, endpoint);
+            return -1;
+        }
+
+        rpc_msg_optimize_bandwidth_req request;
+        request.enable_compression = enable_compression ? 1 : 0;
+
+        rpc_msg_optimize_bandwidth_rsp response;
+        bool status = send_rpc_cmd(sock, RPC_CMD_OPTIMIZE_BANDWIDTH, &request, sizeof(request), &response, sizeof(response));
+        if (!status) {
+            return -1;
+        }
+
+        return response.result ? 0 : -1;
+    } catch (const std::exception & e) {
+        GGML_PRINT_DEBUG("[%s] error: %s\n", __func__, e.what());
+        return -1;
+    }
+}
+
+void ggml_backend_rpc_start_performance_monitor(const char * endpoint) {
+    // Simple implementation - could be enhanced with dedicated monitoring thread
+    GGML_PRINT_DEBUG("[%s] Starting performance monitoring for %s\n", __func__, endpoint);
+    
+    // In a full implementation, this would start a monitoring thread that:
+    // 1. Periodically measures network latency
+    // 2. Tracks bandwidth utilization
+    // 3. Monitors cognitive load distribution
+    // 4. Reports performance metrics
+    
+    // Suppress unused parameter warning
+    (void)endpoint;
+}
+
+// Helper function for getting current timestamp (used in cognitive metadata) - moved above functions that use it
+// static uint64_t get_timestamp() {
+//     auto now = std::chrono::system_clock::now();
+//     auto duration = now.time_since_epoch();
+//     return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+// }
 
 GGML_BACKEND_DL_IMPL(ggml_backend_rpc_reg)
