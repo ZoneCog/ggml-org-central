@@ -3,6 +3,10 @@
 #include "../../src/reasoning/pln-core.h"
 #include "../../src/reasoning/moses-core.h"
 #include "../../src/reasoning/pattern-matcher.h"
+#include "../../src/reasoning/advanced-grammar.h"
+#include "../../src/reasoning/grammar-learning.h"
+#include "../../src/multimodal/multimodal-core.h"
+#include "../../src/multimodal/cross-modal-reasoning.h"
 #include "../../src/autonomy/self-modification.h"
 #include "../../src/autonomy/behavior-analysis.h"
 #include <stdio.h>
@@ -325,6 +329,23 @@ cognitive_agent* create_cognitive_agent(const char* endpoint) {
     agent->self_modification = init_self_modification_engine(agent->ctx);
     agent->behavior_analysis = init_behavior_analysis_engine(agent->ctx);
     
+    // Phase 4: Advanced Cognitive Capabilities
+    agent->cognitive_grammar = create_advanced_grammar("agent_cognitive_grammar", GRAMMAR_TYPE_CONTEXT_SENSITIVE);
+    agent->grammar_learner = create_grammar_learning_engine(agent->cognitive_grammar, LEARNING_METHOD_EVOLUTION);
+    agent->multimodal = create_multimodal_processor(1000, FUSION_ADAPTIVE); // 1000 max sequence length
+    agent->cross_modal_reasoning = create_cross_modal_reasoning_engine(agent->multimodal);
+    
+    // Initialize Phase 4 components
+    if (agent->multimodal) {
+        initialize_multimodal_components(agent->multimodal);
+    }
+    if (agent->grammar_learner) {
+        configure_learning_parameters(agent->grammar_learner, 0.1f, 50); // learning rate 0.1, max 50 cycles
+    }
+    if (agent->cross_modal_reasoning) {
+        configure_reasoning_parameters(agent->cross_modal_reasoning, 0.6f, true); // threshold 0.6, learning enabled
+    }
+    
     // Set identity
     agent->agent_id = generate_agent_id();
     strncpy(agent->endpoint, endpoint, sizeof(agent->endpoint) - 1);
@@ -368,6 +389,20 @@ void cleanup_cognitive_agent(cognitive_agent* agent) {
     cleanup_attention_economy(agent->attention);
     cleanup_self_modification_engine(agent->self_modification);
     cleanup_behavior_analysis_engine(agent->behavior_analysis);
+    
+    // Phase 4: Advanced Cognitive Capabilities cleanup
+    if (agent->cross_modal_reasoning) {
+        destroy_cross_modal_reasoning_engine(agent->cross_modal_reasoning);
+    }
+    if (agent->multimodal) {
+        destroy_multimodal_processor(agent->multimodal);
+    }
+    if (agent->grammar_learner) {
+        destroy_grammar_learning_engine(agent->grammar_learner);
+    }
+    if (agent->cognitive_grammar) {
+        destroy_advanced_grammar(agent->cognitive_grammar);
+    }
     
     if (agent->ctx) {
         ggml_free(agent->ctx);
