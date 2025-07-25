@@ -4,12 +4,16 @@ set(REASONING_SOURCES
     pln-core.c
     moses-core.c
     pattern-matcher.c
+    advanced-grammar.c
+    grammar-learning.c
 )
 
 set(REASONING_HEADERS
     pln-core.h
     moses-core.h
     pattern-matcher.h
+    advanced-grammar.h
+    grammar-learning.h
 )
 
 # Create reasoning library

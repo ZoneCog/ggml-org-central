@@ -26,6 +26,12 @@ struct self_modification_engine;
 // Forward declaration for Behavior Analysis integration
 struct behavior_analysis_engine;
 
+// Forward declarations for Phase 4: Advanced Cognitive Capabilities
+struct advanced_grammar;
+struct grammar_learning_engine;
+struct multimodal_processor;
+struct cross_modal_reasoning_engine;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -167,6 +173,12 @@ struct cognitive_agent {
     attention_economy* attention;
     struct self_modification_engine* self_modification;
     struct behavior_analysis_engine* behavior_analysis;
+    
+    // Phase 4: Advanced Cognitive Capabilities
+    struct advanced_grammar* cognitive_grammar;
+    struct grammar_learning_engine* grammar_learner;
+    struct multimodal_processor* multimodal;
+    struct cross_modal_reasoning_engine* cross_modal_reasoning;
     
     // Network identity
     uint64_t agent_id;

@@ -408,3 +408,6 @@ add_subdirectory(reasoning)
 
 # Add autonomy module for self-modification and meta-learning
 add_subdirectory(autonomy)
+
+# Add multimodal module for Phase 4 advanced cognitive capabilities
+add_subdirectory(multimodal)

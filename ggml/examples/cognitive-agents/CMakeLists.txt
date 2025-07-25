@@ -15,6 +15,7 @@ target_link_libraries(cognitive-agents-demo
     ggml-base
     ggml-reasoning
     ggml-autonomy
+    ggml-multimodal
     ggml-rpc
     ${CMAKE_THREAD_LIBS_INIT}
     m  # Math library for sin/cos functions
