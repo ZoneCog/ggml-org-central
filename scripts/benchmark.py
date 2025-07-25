@@ -246,6 +246,33 @@ class CognitiveBenchmark:
             "collaborative_tools": True,
             "target_met": True
         }
+
+    def benchmark_integration_tests(self) -> Dict:
+        """Run integration tests across all implemented phases"""
+        print("Running Integration Tests...")
+        
+        results = {
+            "phase": "integration",
+            "timestamp": self.timestamp,
+            "tests": {}
+        }
+        
+        # Test multi-agent communication
+        print("  Testing multi-agent communication...")
+        comm_test = self._test_agent_communication()
+        results["tests"]["agent_communication"] = comm_test
+        
+        # Test memory integration
+        print("  Testing memory system integration...")
+        memory_test = self._test_memory_integration()
+        results["tests"]["memory_integration"] = memory_test
+        
+        # Test attention system integration
+        print("  Testing attention system integration...")
+        attention_test = self._test_attention_integration()
+        results["tests"]["attention_integration"] = attention_test
+        
+        return results
         """Run integration tests across all implemented phases"""
         print("Running Integration Tests...")
         

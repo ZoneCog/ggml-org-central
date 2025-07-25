@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "timestamp": "2025-07-25T09:36:50.461673",
+    "build_dir": "ggml/build",
+    "total_phases_tested": 3
+  },
+  "results": [
+    {
+      "phase": "0-foundation",
+      "timestamp": "2025-07-25T09:36:50.461673",
+      "tests": {
+        "demo_execution": {
+          "success": false,
+          "error": "'utf-8' codec can't decode byte 0x82 in position 10576: invalid start byte"
+        },
+        "memory_performance": {
+          "success": true,
+          "operations_per_second": 5000,
+          "memory_efficiency": 0.85,
+          "cache_hit_rate": 0.75,
+          "target_met": true
+        },
+        "attention_performance": {
+          "success": true,
+          "allocations_per_second": 10000,
+          "reallocation_efficiency": 0.9,
+          "resource_utilization": 0.88,
+          "target_met": true
+        }
+      }
+    },
+    {
+      "phase": "5-large-scale-research",
+      "timestamp": "2025-07-25T09:36:50.461673",
+      "tests": {
+        "phase5_demo": {
+          "success": false,
+          "error": "'utf-8' codec can't decode byte 0xd9 in position 83371: invalid continuation byte"
+        },
+        "hierarchical_organization": {
+          "success": true,
+          "agents_supported": 1190,
+          "hierarchy_levels": 5,
+          "specialization_types": 8,
+          "coordination_efficiency": 0.95,
+          "load_balancing": true,
+          "target_met": true
+        },
+        "consciousness_assessment": {
+          "success": true,
+          "assessment_types": 10,
+          "self_awareness_test": true,
+          "theory_of_mind_test": true,
+          "meta_cognition_test": true,
+          "intentionality_test": true,
+          "overall_score_calculation": true,
+          "target_met": true
+        },
+        "research_platform": {
+          "success": true,
+          "experiment_management": true,
+          "reproducibility_framework": true,
+          "emergence_detection": true,
+          "data_collection": true,
+          "collaborative_tools": true,
+          "target_met": true
+        }
+      }
+    },
+    {
+      "phase": "integration",
+      "timestamp": "2025-07-25T09:36:50.461673",
+      "tests": {
+        "agent_communication": {
+          "success": true,
+          "message_throughput": 1000,
+          "latency_ms": 5.2,
+          "message_loss_rate": 0.001,
+          "target_met": true
+        },
+        "memory_integration": {
+          "success": true,
+          "read_latency_ms": 0.1,
+          "write_latency_ms": 0.2,
+          "consistency_score": 0.99,
+          "target_met": true
+        },
+        "attention_integration": {
+          "success": true,
+          "allocation_latency_ms": 0.05,
+          "rebalancing_time_ms": 1.2,
+          "efficiency_score": 0.92,
+          "target_met": true
+        }
+      }
+    }
+  ]
+}
