@@ -20,6 +20,9 @@ struct moses_engine;
 // Forward declaration for Pattern Matcher integration
 struct pattern_matcher;
 
+// Forward declaration for Self-Modification integration
+struct self_modification_engine;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -159,6 +162,7 @@ struct cognitive_agent {
     task_orchestrator* tasks;
     reasoning_engine* reasoning;
     attention_economy* attention;
+    struct self_modification_engine* self_modification;
     
     // Network identity
     uint64_t agent_id;

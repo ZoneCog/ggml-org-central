@@ -405,3 +405,6 @@ endif()
 
 # Add reasoning module for advanced cognitive capabilities
 add_subdirectory(reasoning)
+
+# Add autonomy module for self-modification and meta-learning
+add_subdirectory(autonomy)

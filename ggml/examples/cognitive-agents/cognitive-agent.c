@@ -3,6 +3,7 @@
 #include "../../src/reasoning/pln-core.h"
 #include "../../src/reasoning/moses-core.h"
 #include "../../src/reasoning/pattern-matcher.h"
+#include "../../src/autonomy/self-modification.h"
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
@@ -320,6 +321,7 @@ cognitive_agent* create_cognitive_agent(const char* endpoint) {
     agent->tasks = init_task_orchestrator();
     agent->reasoning = init_reasoning_engine(agent->ctx);
     agent->attention = init_attention_economy();
+    agent->self_modification = init_self_modification_engine(agent->ctx);
     
     // Set identity
     agent->agent_id = generate_agent_id();
@@ -362,6 +364,7 @@ void cleanup_cognitive_agent(cognitive_agent* agent) {
     cleanup_task_orchestrator(agent->tasks);
     cleanup_reasoning_engine(agent->reasoning);
     cleanup_attention_economy(agent->attention);
+    cleanup_self_modification_engine(agent->self_modification);
     
     if (agent->ctx) {
         ggml_free(agent->ctx);
