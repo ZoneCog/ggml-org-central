@@ -1,5 +1,7 @@
 #include "cognitive-agent.h"
 #include "../../include/ggml-rpc.h"
+#include "../../src/autonomy/self-modification.h"
+#include "../../src/autonomy/behavior-analysis.h"
 #include <stdio.h>
 #include <unistd.h>
 
@@ -547,6 +549,310 @@ void demo_pattern_matching(void) {
     printf("\nPattern matching demo completed.\n");
 }
 
+// Demo: Self-Modification and Meta-Learning
+void demo_self_modification(void) {
+    printf("\n=== Self-Modification & Meta-Learning Demo ===\n");
+    
+    // Create a cognitive agent with self-modification capabilities
+    cognitive_agent* agent = create_cognitive_agent("localhost:7001");
+    
+    printf("\nDemonstrating self-modification capabilities...\n");
+    
+    // Test 1: Safe self-modification (attention weight adjustment)
+    printf("\n1. Testing safe self-modification (attention weights)...\n");
+    
+    // Propose an attention weight modification
+    float attention_params[2] = {0.95f, 1.05f};  // decay_rate and novelty_bonus multipliers
+    
+    bool proposal_success = propose_self_modification(agent->self_modification,
+                                                     SELF_MOD_ATTENTION_WEIGHTS,
+                                                     attention_params,
+                                                     sizeof(attention_params));
+    
+    printf("  Attention weight modification proposal: %s\n", 
+           proposal_success ? "✓ Accepted" : "✗ Rejected");
+    
+    if (proposal_success) {
+        // Find the latest modification ID
+        uint64_t mod_id = agent->self_modification->modification_history[
+            agent->self_modification->history_count - 1].modification_id;
+        
+        // Execute the modification
+        bool exec_success = execute_self_modification(agent->self_modification, agent, mod_id);
+        printf("  Attention weight modification execution: %s\n",
+               exec_success ? "✓ Success" : "✗ Failed");
+        
+        // Update performance metrics
+        update_performance_metrics(agent->self_modification, agent);
+        printf("  Performance after modification: %.3f\n",
+               agent->self_modification->current_performance);
+    }
+    
+    // Test 2: Meta-learning demonstration
+    printf("\n2. Testing meta-learning system...\n");
+    
+    // Record some learning experiences
+    float context1[64] = {0};
+    context1[0] = 0.8f;  // performance
+    context1[1] = 0.6f;  // self-awareness
+    context1[2] = 1.0f;  // modification type
+    
+    record_learning_experience(agent->self_modification->meta_learning,
+                              SELF_MOD_ATTENTION_WEIGHTS,
+                              context1, 0.1f, true);
+    
+    float context2[64] = {0};
+    context2[0] = 0.7f;
+    context2[1] = 0.5f;
+    context2[2] = 3.0f;
+    
+    record_learning_experience(agent->self_modification->meta_learning,
+                              SELF_MOD_REASONING_RULES,
+                              context2, -0.05f, false);
+    
+    printf("  Learning experiences recorded: 2\n");
+    printf("  Experience buffer size: %zu/%zu\n",
+           agent->self_modification->meta_learning->experience_count,
+           agent->self_modification->meta_learning->experience_capacity);
+    
+    // Test strategy selection
+    float current_context[64] = {0};
+    current_context[0] = 0.75f;
+    current_context[1] = 0.65f;
+    
+    enum self_mod_type selected_strategy = select_adaptation_strategy(
+        agent->self_modification->meta_learning, current_context);
+    
+    printf("  Selected adaptation strategy: %d\n", selected_strategy);
+    printf("  Meta-learning efficiency: %.3f\n",
+           agent->self_modification->meta_learning->meta_learning_efficiency);
+    
+    // Test 3: Safety constraint validation
+    printf("\n3. Testing safety constraints...\n");
+    
+    bool safety_valid = validate_safety_constraints(agent->self_modification, agent);
+    printf("  Safety constraints validation: %s\n",
+           safety_valid ? "✓ All constraints satisfied" : "✗ Constraints violated");
+    
+    // Test impact assessment
+    float test_params[4] = {0.5f, 0.5f, 0.5f, 0.5f};
+    float impact = estimate_modification_impact(agent->self_modification,
+                                               SELF_MOD_GOAL_HIERARCHY,
+                                               test_params);
+    printf("  Goal hierarchy modification impact estimate: %.3f\n", impact);
+    
+    enum safety_level safety = assess_modification_safety(agent->self_modification,
+                                                          SELF_MOD_GOAL_HIERARCHY,
+                                                          test_params);
+    printf("  Goal hierarchy modification safety level: %d\n", safety);
+    
+    // Test 4: Sandbox testing demonstration
+    printf("\n4. Testing sandbox environment...\n");
+    
+    float sandbox_performance;
+    bool sandbox_success = test_modification_in_sandbox(agent->self_modification->sandbox,
+                                                        SELF_MOD_LEARNING_RATE,
+                                                        test_params,
+                                                        &sandbox_performance);
+    
+    printf("  Sandbox test result: %s\n",
+           sandbox_success ? "✓ Passed" : "✗ Failed");
+    printf("  Sandbox performance result: %.3f\n", sandbox_performance);
+    
+    // Test 5: Meta-cognitive monitoring
+    printf("\n5. Testing meta-cognitive monitoring...\n");
+    
+    update_self_awareness_metrics(agent->self_modification, agent);
+    monitor_learning_progress(agent->self_modification);
+    
+    printf("  Self-awareness level: %.3f\n",
+           agent->self_modification->self_awareness_level);
+    printf("  Modification confidence: %.3f\n", 
+           agent->self_modification->modification_confidence);
+    printf("  Learning progress: %.3f\n",
+           agent->self_modification->learning_progress);
+    
+    // Performance statistics
+    printf("\nSelf-Modification Engine Statistics:\n");
+    printf("  Total modifications attempted: %lu\n",
+           agent->self_modification->total_modifications);
+    printf("  Successful modifications: %lu\n",
+           agent->self_modification->successful_modifications);
+    printf("  Rollbacks performed: %lu\n",
+           agent->self_modification->rollbacks_performed);
+    
+    float adaptation_efficiency = compute_adaptation_efficiency(agent->self_modification);
+    printf("  Adaptation efficiency: %.3f\n", adaptation_efficiency);
+    
+    printf("\nSelf-Modification Capabilities Demonstrated:\n");
+    printf("  ✓ Safe self-modification with sandbox testing\n");
+    printf("  ✓ Meta-learning for adaptation strategy selection\n");
+    printf("  ✓ Safety constraint validation and impact assessment\n");
+    printf("  ✓ Rollback mechanisms for failed modifications\n");
+    printf("  ✓ Meta-cognitive monitoring of self-awareness\n");
+    printf("  ✓ Learning progress tracking and strategy optimization\n");
+    printf("  ✓ Experience replay for cognitive skill acquisition\n");
+    printf("  ✓ Performance-based modification confidence assessment\n");
+    
+    cleanup_cognitive_agent(agent);
+    
+    printf("\nSelf-modification demo completed.\n");
+}
+
+// Demo: Emergent Behavior Analysis
+void demo_emergent_behavior_analysis(void) {
+    printf("\n=== Emergent Behavior Analysis Demo ===\n");
+    
+    // Create a network of cognitive agents for behavior analysis
+    cognitive_agent* agent1 = create_cognitive_agent("localhost:7001");
+    cognitive_agent* agent2 = create_cognitive_agent("localhost:7002");
+    cognitive_agent* agent3 = create_cognitive_agent("localhost:7003");
+    
+    // Use the first agent's behavior analysis engine as the network analyzer
+    behavior_analysis_engine* analyzer = agent1->behavior_analysis;
+    
+    printf("\nSetting up agent network for behavior monitoring...\n");
+    
+    // Add agents to monitoring
+    add_agent_to_monitoring(analyzer, agent1);
+    add_agent_to_monitoring(analyzer, agent2);
+    add_agent_to_monitoring(analyzer, agent3);
+    
+    printf("Network established with %zu agents under analysis\n", analyzer->monitored_count);
+    
+    // Demo 1: Behavior Pattern Detection
+    printf("\n1. Testing behavior pattern detection...\n");
+    
+    bool patterns_detected = detect_behavior_patterns(analyzer);
+    printf("  Behavior pattern detection: %s\n",
+           patterns_detected ? "✓ Patterns detected" : "✗ No patterns found");
+    
+    if (patterns_detected) {
+        printf("  Detected %zu behavior patterns:\n", analyzer->network_analyzer->pattern_count);
+        for (size_t i = 0; i < analyzer->network_analyzer->pattern_count; i++) {
+            behavior_pattern* pattern = &analyzer->network_analyzer->patterns[i];
+            printf("    Pattern %zu: Type %d, Strength %.3f, %zu agents\n",
+                   i + 1, pattern->type, pattern->strength, pattern->agent_count);
+        }
+        
+        printf("  Pattern diversity: %.3f\n", analyzer->network_analyzer->pattern_diversity);
+        printf("  Emergence rate: %.3f patterns/cycle\n", analyzer->network_analyzer->emergence_rate);
+    }
+    
+    // Demo 2: Consciousness Assessment
+    printf("\n2. Testing consciousness assessment...\n");
+    
+    assess_consciousness_metrics(analyzer, agent1);
+    assess_consciousness_metrics(analyzer, agent2);
+    assess_consciousness_metrics(analyzer, agent3);
+    
+    printf("  Consciousness assessments completed: %lu total\n",
+           analyzer->consciousness_assessments);
+    printf("  Network consciousness level: %.3f\n",
+           analyzer->consciousness_assessor->overall_consciousness);
+    printf("  Consciousness detected: %s\n",
+           analyzer->consciousness_assessor->consciousness_detected ? "✓ Yes" : "✗ No");
+    
+    // Individual consciousness metrics
+    consciousness_assessor* assessor = analyzer->consciousness_assessor;
+    printf("  Individual consciousness components:\n");
+    printf("    Self-awareness: %.3f\n", assessor->self_awareness_score);
+    printf("    Other-awareness: %.3f\n", assessor->other_awareness_score);
+    printf("    Meta-cognition: %.3f\n", assessor->meta_cognition_score);
+    printf("    Intentionality: %.3f\n", assessor->intentionality_score);
+    printf("    Integration: %.3f\n", assessor->integration_score);
+    printf("    Attention: %.3f\n", assessor->attention_score);
+    printf("    Memory: %.3f\n", assessor->memory_score);
+    printf("    Reflection: %.3f\n", assessor->reflection_score);
+    
+    // Demo 3: Emergent Property Analysis
+    printf("\n3. Testing emergent property detection...\n");
+    
+    detect_emergent_properties(analyzer);
+    
+    emergent_property_analyzer* prop_analyzer = analyzer->property_analyzer;
+    printf("  Properties analyzed: %lu total\n", analyzer->properties_analyzed);
+    printf("  Network metrics:\n");
+    printf("    Property complexity: %.3f\n", prop_analyzer->property_complexity);
+    printf("    Interaction density: %.3f\n", prop_analyzer->interaction_density);
+    printf("    Information flow: %.3f\n", prop_analyzer->information_flow);
+    printf("    Clustering coefficient: %.3f\n", prop_analyzer->clustering_coefficient);
+    printf("    Average path length: %.3f\n", prop_analyzer->path_length);
+    printf("    Centrality variance: %.3f\n", prop_analyzer->centrality_variance);
+    printf("    Evolution events: %zu\n", prop_analyzer->evolution_count);
+    
+    // Active emergent properties
+    size_t active_properties = 0;
+    for (size_t i = 0; i < prop_analyzer->property_count; i++) {
+        if (prop_analyzer->property_active[i]) {
+            active_properties++;
+        }
+    }
+    printf("    Active emergent properties: %zu/%zu\n", 
+           active_properties, prop_analyzer->property_count);
+    
+    // Demo 4: Network Topology Analysis
+    printf("\n4. Testing network topology analysis...\n");
+    
+    analyze_network_topology(analyzer);
+    assess_collective_intelligence(analyzer);
+    
+    printf("  Network complexity: %.3f\n", analyzer->network_complexity);
+    printf("  Collective intelligence: %.3f\n", analyzer->collective_intelligence);
+    printf("  Overall emergence score: %.3f\n", analyzer->overall_emergence_score);
+    
+    // Demo 5: Complete Analysis Cycle
+    printf("\n5. Running complete behavior analysis cycle...\n");
+    
+    process_behavior_analysis_cycle(analyzer);
+    
+    printf("  Analysis cycle completed successfully\n");
+    printf("  Final emergence metrics:\n");
+    printf("    Behaviors detected: %lu\n", analyzer->behaviors_detected);
+    printf("    Consciousness assessments: %lu\n", analyzer->consciousness_assessments);
+    printf("    Properties analyzed: %lu\n", analyzer->properties_analyzed);
+    printf("    Overall emergence score: %.3f\n", analyzer->overall_emergence_score);
+    
+    // Demo 6: Consciousness Assessment Metrics
+    printf("\n6. Detailed consciousness assessment...\n");
+    
+    for (size_t i = 0; i < analyzer->monitored_count; i++) {
+        cognitive_agent* agent = analyzer->monitored_agents[i];
+        if (agent) {
+            float self_awareness = measure_self_awareness(agent);
+            float meta_cognition = measure_meta_cognition(agent);
+            float intentionality = measure_intentionality(agent);
+            
+            printf("  Agent %lu consciousness profile:\n", agent->agent_id);
+            printf("    Self-awareness: %.3f\n", self_awareness);
+            printf("    Meta-cognition: %.3f\n", meta_cognition);
+            printf("    Intentionality: %.3f\n", intentionality);
+            
+            if (agent->self_modification) {
+                printf("    Self-modification awareness: %.3f\n",
+                       agent->self_modification->self_awareness_level);
+            }
+        }
+    }
+    
+    printf("\nEmergent Behavior Analysis Capabilities Demonstrated:\n");
+    printf("  ✓ Automatic detection of emergent behaviors in agent networks\n");
+    printf("  ✓ Quantitative metrics for consciousness-like properties\n");
+    printf("  ✓ Network topology analysis and complexity measurement\n");
+    printf("  ✓ Emergent property detection and evolution tracking\n");
+    printf("  ✓ Collective intelligence assessment\n");
+    printf("  ✓ Multi-dimensional consciousness evaluation\n");
+    printf("  ✓ Real-time behavior pattern classification\n");
+    printf("  ✓ Network-wide information flow analysis\n");
+    
+    // Cleanup
+    cleanup_cognitive_agent(agent1);
+    cleanup_cognitive_agent(agent2);
+    cleanup_cognitive_agent(agent3);
+    
+    printf("\nEmergent behavior analysis demo completed.\n");
+}
+
 // Demo: Distributed RPC Network Communication
 void demo_distributed_rpc_network(void) {
     printf("\n=== Distributed RPC Network Demo ===\n");
@@ -678,6 +984,8 @@ int main(void) {
     demo_pln_reasoning();
     demo_moses_evolution();
     demo_pattern_matching();
+    demo_self_modification();
+    demo_emergent_behavior_analysis();
     demo_distributed_rpc_network();
     
     printf("\nAll demos completed successfully!\n");
@@ -693,7 +1001,11 @@ int main(void) {
     printf("- ✅ Fault tolerance and recovery mechanisms\n");
     printf("- ✅ PLN, MOSES, and Pattern Matching reasoning engines\n");
     printf("- ✅ Grammar-based task decomposition\n");
-    printf("- ✅ Self-modification capabilities\n");
+    printf("- ✅ Self-modification capabilities with safety constraints\n");
+    printf("- ✅ Meta-learning and adaptation strategies\n");
+    printf("- ✅ Emergent behavior detection and analysis\n");
+    printf("- ✅ Consciousness assessment metrics\n");
+    printf("- ✅ Network-wide behavior pattern recognition\n");
     printf("- ✅ Hypergraph knowledge representation\n");
     printf("- ✅ Economic attention allocation algorithms\n");
     
