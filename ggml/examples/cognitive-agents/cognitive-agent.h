@@ -23,6 +23,9 @@ struct pattern_matcher;
 // Forward declaration for Self-Modification integration
 struct self_modification_engine;
 
+// Forward declaration for Behavior Analysis integration
+struct behavior_analysis_engine;
+
 // Forward declarations
 typedef struct cognitive_agent cognitive_agent;
 typedef struct hypergraph_memory hypergraph_memory;
@@ -163,6 +166,7 @@ struct cognitive_agent {
     reasoning_engine* reasoning;
     attention_economy* attention;
     struct self_modification_engine* self_modification;
+    struct behavior_analysis_engine* behavior_analysis;
     
     // Network identity
     uint64_t agent_id;

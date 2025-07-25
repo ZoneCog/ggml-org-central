@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 # Build autonomy library
 add_library(ggml-autonomy SHARED
     self-modification.c
+    behavior-analysis.c
 )
 
 target_include_directories(ggml-autonomy PUBLIC
@@ -24,7 +25,7 @@ target_link_libraries(ggml-autonomy
 set_target_properties(ggml-autonomy PROPERTIES
     VERSION 1.0.0
     SOVERSION 1
-    PUBLIC_HEADER "self-modification.h"
+    PUBLIC_HEADER "self-modification.h;behavior-analysis.h"
 )
 
 # Add compile definitions

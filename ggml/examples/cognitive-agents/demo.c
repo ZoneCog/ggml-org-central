@@ -1,6 +1,7 @@
 #include "cognitive-agent.h"
 #include "../../include/ggml-rpc.h"
 #include "../../src/autonomy/self-modification.h"
+#include "../../src/autonomy/behavior-analysis.h"
 #include <stdio.h>
 #include <unistd.h>
 
@@ -698,6 +699,160 @@ void demo_self_modification(void) {
     printf("\nSelf-modification demo completed.\n");
 }
 
+// Demo: Emergent Behavior Analysis
+void demo_emergent_behavior_analysis(void) {
+    printf("\n=== Emergent Behavior Analysis Demo ===\n");
+    
+    // Create a network of cognitive agents for behavior analysis
+    cognitive_agent* agent1 = create_cognitive_agent("localhost:7001");
+    cognitive_agent* agent2 = create_cognitive_agent("localhost:7002");
+    cognitive_agent* agent3 = create_cognitive_agent("localhost:7003");
+    
+    // Use the first agent's behavior analysis engine as the network analyzer
+    behavior_analysis_engine* analyzer = agent1->behavior_analysis;
+    
+    printf("\nSetting up agent network for behavior monitoring...\n");
+    
+    // Add agents to monitoring
+    add_agent_to_monitoring(analyzer, agent1);
+    add_agent_to_monitoring(analyzer, agent2);
+    add_agent_to_monitoring(analyzer, agent3);
+    
+    printf("Network established with %zu agents under analysis\n", analyzer->monitored_count);
+    
+    // Demo 1: Behavior Pattern Detection
+    printf("\n1. Testing behavior pattern detection...\n");
+    
+    bool patterns_detected = detect_behavior_patterns(analyzer);
+    printf("  Behavior pattern detection: %s\n",
+           patterns_detected ? "✓ Patterns detected" : "✗ No patterns found");
+    
+    if (patterns_detected) {
+        printf("  Detected %zu behavior patterns:\n", analyzer->network_analyzer->pattern_count);
+        for (size_t i = 0; i < analyzer->network_analyzer->pattern_count; i++) {
+            behavior_pattern* pattern = &analyzer->network_analyzer->patterns[i];
+            printf("    Pattern %zu: Type %d, Strength %.3f, %zu agents\n",
+                   i + 1, pattern->type, pattern->strength, pattern->agent_count);
+        }
+        
+        printf("  Pattern diversity: %.3f\n", analyzer->network_analyzer->pattern_diversity);
+        printf("  Emergence rate: %.3f patterns/cycle\n", analyzer->network_analyzer->emergence_rate);
+    }
+    
+    // Demo 2: Consciousness Assessment
+    printf("\n2. Testing consciousness assessment...\n");
+    
+    assess_consciousness_metrics(analyzer, agent1);
+    assess_consciousness_metrics(analyzer, agent2);
+    assess_consciousness_metrics(analyzer, agent3);
+    
+    printf("  Consciousness assessments completed: %lu total\n",
+           analyzer->consciousness_assessments);
+    printf("  Network consciousness level: %.3f\n",
+           analyzer->consciousness_assessor->overall_consciousness);
+    printf("  Consciousness detected: %s\n",
+           analyzer->consciousness_assessor->consciousness_detected ? "✓ Yes" : "✗ No");
+    
+    // Individual consciousness metrics
+    consciousness_assessor* assessor = analyzer->consciousness_assessor;
+    printf("  Individual consciousness components:\n");
+    printf("    Self-awareness: %.3f\n", assessor->self_awareness_score);
+    printf("    Other-awareness: %.3f\n", assessor->other_awareness_score);
+    printf("    Meta-cognition: %.3f\n", assessor->meta_cognition_score);
+    printf("    Intentionality: %.3f\n", assessor->intentionality_score);
+    printf("    Integration: %.3f\n", assessor->integration_score);
+    printf("    Attention: %.3f\n", assessor->attention_score);
+    printf("    Memory: %.3f\n", assessor->memory_score);
+    printf("    Reflection: %.3f\n", assessor->reflection_score);
+    
+    // Demo 3: Emergent Property Analysis
+    printf("\n3. Testing emergent property detection...\n");
+    
+    detect_emergent_properties(analyzer);
+    
+    emergent_property_analyzer* prop_analyzer = analyzer->property_analyzer;
+    printf("  Properties analyzed: %lu total\n", analyzer->properties_analyzed);
+    printf("  Network metrics:\n");
+    printf("    Property complexity: %.3f\n", prop_analyzer->property_complexity);
+    printf("    Interaction density: %.3f\n", prop_analyzer->interaction_density);
+    printf("    Information flow: %.3f\n", prop_analyzer->information_flow);
+    printf("    Clustering coefficient: %.3f\n", prop_analyzer->clustering_coefficient);
+    printf("    Average path length: %.3f\n", prop_analyzer->path_length);
+    printf("    Centrality variance: %.3f\n", prop_analyzer->centrality_variance);
+    printf("    Evolution events: %zu\n", prop_analyzer->evolution_count);
+    
+    // Active emergent properties
+    size_t active_properties = 0;
+    for (size_t i = 0; i < prop_analyzer->property_count; i++) {
+        if (prop_analyzer->property_active[i]) {
+            active_properties++;
+        }
+    }
+    printf("    Active emergent properties: %zu/%zu\n", 
+           active_properties, prop_analyzer->property_count);
+    
+    // Demo 4: Network Topology Analysis
+    printf("\n4. Testing network topology analysis...\n");
+    
+    analyze_network_topology(analyzer);
+    assess_collective_intelligence(analyzer);
+    
+    printf("  Network complexity: %.3f\n", analyzer->network_complexity);
+    printf("  Collective intelligence: %.3f\n", analyzer->collective_intelligence);
+    printf("  Overall emergence score: %.3f\n", analyzer->overall_emergence_score);
+    
+    // Demo 5: Complete Analysis Cycle
+    printf("\n5. Running complete behavior analysis cycle...\n");
+    
+    process_behavior_analysis_cycle(analyzer);
+    
+    printf("  Analysis cycle completed successfully\n");
+    printf("  Final emergence metrics:\n");
+    printf("    Behaviors detected: %lu\n", analyzer->behaviors_detected);
+    printf("    Consciousness assessments: %lu\n", analyzer->consciousness_assessments);
+    printf("    Properties analyzed: %lu\n", analyzer->properties_analyzed);
+    printf("    Overall emergence score: %.3f\n", analyzer->overall_emergence_score);
+    
+    // Demo 6: Consciousness Assessment Metrics
+    printf("\n6. Detailed consciousness assessment...\n");
+    
+    for (size_t i = 0; i < analyzer->monitored_count; i++) {
+        cognitive_agent* agent = analyzer->monitored_agents[i];
+        if (agent) {
+            float self_awareness = measure_self_awareness(agent);
+            float meta_cognition = measure_meta_cognition(agent);
+            float intentionality = measure_intentionality(agent);
+            
+            printf("  Agent %lu consciousness profile:\n", agent->agent_id);
+            printf("    Self-awareness: %.3f\n", self_awareness);
+            printf("    Meta-cognition: %.3f\n", meta_cognition);
+            printf("    Intentionality: %.3f\n", intentionality);
+            
+            if (agent->self_modification) {
+                printf("    Self-modification awareness: %.3f\n",
+                       agent->self_modification->self_awareness_level);
+            }
+        }
+    }
+    
+    printf("\nEmergent Behavior Analysis Capabilities Demonstrated:\n");
+    printf("  ✓ Automatic detection of emergent behaviors in agent networks\n");
+    printf("  ✓ Quantitative metrics for consciousness-like properties\n");
+    printf("  ✓ Network topology analysis and complexity measurement\n");
+    printf("  ✓ Emergent property detection and evolution tracking\n");
+    printf("  ✓ Collective intelligence assessment\n");
+    printf("  ✓ Multi-dimensional consciousness evaluation\n");
+    printf("  ✓ Real-time behavior pattern classification\n");
+    printf("  ✓ Network-wide information flow analysis\n");
+    
+    // Cleanup
+    cleanup_cognitive_agent(agent1);
+    cleanup_cognitive_agent(agent2);
+    cleanup_cognitive_agent(agent3);
+    
+    printf("\nEmergent behavior analysis demo completed.\n");
+}
+
 // Demo: Distributed RPC Network Communication
 void demo_distributed_rpc_network(void) {
     printf("\n=== Distributed RPC Network Demo ===\n");
@@ -830,6 +985,7 @@ int main(void) {
     demo_moses_evolution();
     demo_pattern_matching();
     demo_self_modification();
+    demo_emergent_behavior_analysis();
     demo_distributed_rpc_network();
     
     printf("\nAll demos completed successfully!\n");
@@ -845,7 +1001,11 @@ int main(void) {
     printf("- ✅ Fault tolerance and recovery mechanisms\n");
     printf("- ✅ PLN, MOSES, and Pattern Matching reasoning engines\n");
     printf("- ✅ Grammar-based task decomposition\n");
-    printf("- ✅ Self-modification capabilities\n");
+    printf("- ✅ Self-modification capabilities with safety constraints\n");
+    printf("- ✅ Meta-learning and adaptation strategies\n");
+    printf("- ✅ Emergent behavior detection and analysis\n");
+    printf("- ✅ Consciousness assessment metrics\n");
+    printf("- ✅ Network-wide behavior pattern recognition\n");
     printf("- ✅ Hypergraph knowledge representation\n");
     printf("- ✅ Economic attention allocation algorithms\n");
     
